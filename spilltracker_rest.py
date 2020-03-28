@@ -6,6 +6,7 @@ import settings
 import lookups
 import reports_db as db
 import os
+import socket
 from geo import coord_converter
 import exporter
 
@@ -20,7 +21,8 @@ app.config['UPLOAD_FOLDER'] = 'static/attachments'
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
 # Disable debug mode on prod
-
+if socket.gethostname() == 'spilltracker':
+    app.config["DEBUG"] = False
 
 
 @app.route('/', methods=['GET'])
