@@ -1,0 +1,58 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+{% block head %}
+
+{% set title = 'CCG/DFO Spill Tracker' %}
+<!-- navbar & header here -->
+{% include 'snippets/_header.html' %}
+{# {% include 'snippets/_navbar.html' %} #}
+
+<link rel="stylesheet" type="text/css" href="/static/spill.css">
+
+{% endblock head %}
+</head>
+
+<body>
+<header>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="#">CCG/DFO Spill Tracker</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" 
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('index') }}">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('reports_all') }}">View All Reports</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('new_report') }}">New Report</a>
+                </li>
+            </ul>
+            <div class="ml-auto text-danger">PROTOTYPE. Not to be used operationally.</div>
+
+        </div>
+    </nav>
+
+</header>
+
+{% block fullpage %}
+<div class="container">
+<div class="content">
+
+    {% block content %}
+    {% endblock content %}
+
+</div>  <!-- content -->
+</div>   <!-- container -->
+{% endblock fullpage %}
+
+{% include 'snippets/_footer.html' %}
+</body>
+</html>

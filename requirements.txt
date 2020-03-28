@@ -1,0 +1,6 @@
+openpyxl
+flask
+Flask-Cors
+sqlalchemy
+uwsgi
+psycopg2-binary
