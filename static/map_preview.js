@@ -36,10 +36,11 @@ if ( (typeof(saved_latitude) != "undefined") && (typeof(saved_longitude) != "und
 //     mymap.panTo(new L.LatLng(position.lat, position.lng))
 // })
 
-// Tile background layer
+// Tile background layers
 // var esriImagery = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
 // var esriBase = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Terrain_Base/MapServer/tile/{z}/{y}/{x}'
 var mapboxImagery = 'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw'
+
 L.tileLayer(
     mapboxImagery, {
     maxZoom: 18,
@@ -61,7 +62,6 @@ $('#coordinates').change( function() {
         dataType: "json",
         contentType: "application/json; charset=utf-8",
     })
-    // console.log(result)
     result.done(function(){
         console.log('Success')
         // Hide error text if exists
