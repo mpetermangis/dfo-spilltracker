@@ -1,6 +1,11 @@
 openpyxl
 flask
 Flask-Cors
+Flask-Security
+Flask-SQLAlchemy
 sqlalchemy
 uwsgi
 psycopg2-binary
+python-dotenv
+email_validator
+bcrypt

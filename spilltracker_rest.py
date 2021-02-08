@@ -8,7 +8,12 @@ import reports_db as db
 import os
 import socket
 from geo import coord_converter
-import exporter
+import excel_export
+
+# Flask login / security modules
+from flask_sqlalchemy import SQLAlchemy
+from flask_security import Security, SQLAlchemyUserDatastore, \
+    UserMixin, RoleMixin, login_required
 
 logger = settings.setup_logger(__name__)
 port=5000
@@ -20,9 +25,82 @@ app.config['UPLOAD_FOLDER'] = 'static/attachments'
 # Disable caching on downloaded files
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
+
+# Related to user logins (Flask-security)
+app.config['DEBUG'] = True
+app.config['SECRET_KEY'] = settings.db_secret
+# postgresql://user:pass@localhost:5432/my_db
+app.config['SQLALCHEMY_DATABASE_URI'] = settings.SPILL_TRACKER_DB_URL
+app.config['SECURITY_REGISTERABLE'] = True
+# There is another configuration value to change the URL if desired:
+# Use cryptic URL to prevent spam registration
+# app.config['SECURITY_REGISTER_URL'] = '/create_account'
+app.config['SECURITY_REGISTER_URL'] = '/TuychXJzpBhv2mmZcGt8bQ'
+app.config['SECURITY_PASSWORD_SALT'] = settings.db_salt
+# https://pythonhosted.org/Flask-Security/configuration.html#miscellaneous
+app.config['SECURITY_SEND_REGISTER_EMAIL'] = False
+
+# Disable caching on downloaded files
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+# Disable track modifications, see https://github.com/pallets/flask-sqlalchemy/issues/365
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SECURITY_RECOVERABLE'] = True
+
+
+# Setup user DB and flask-security
+# Create database connection object
+userdb = SQLAlchemy(app)
+
+# Define models
+roles_users = userdb.Table('roles_users',
+                           userdb.Column('user_id', userdb.Integer(), userdb.ForeignKey('user.id')),
+                           userdb.Column('role_id', userdb.Integer(), userdb.ForeignKey('role.id')))
+
+
+class Role(userdb.Model, RoleMixin):
+    id = userdb.Column(userdb.Integer(), primary_key=True)
+    name = userdb.Column(userdb.String(80), unique=True)
+    description = userdb.Column(userdb.String(255))
+
+
+class User(userdb.Model, UserMixin):
+    id = userdb.Column(userdb.Integer, primary_key=True)
+    email = userdb.Column(userdb.String(255), unique=True)
+    staff_name = userdb.Column(userdb.String(255))
+    password = userdb.Column(userdb.String(255))
+    active = userdb.Column(userdb.Boolean, default=False)
+    confirmed_at = userdb.Column(userdb.DateTime())
+    roles = userdb.relationship('Role', secondary=roles_users,
+                                backref=userdb.backref('users', lazy='dynamic'))
+
+
+# Setup Flask-Security datastore
+user_datastore = SQLAlchemyUserDatastore(userdb, User, Role)
+
+# Use a custom registration form
+from flask_security.forms import RegisterForm, Required
+from wtforms import BooleanField, Field, HiddenField, PasswordField, \
+    StringField, SubmitField, ValidationError, validators
+
+
+class ExtendedRegisterForm(RegisterForm):
+    staff_name = StringField('Full Name', [Required()])
+    # last_name = StringField('Last Name', [Required()])
+
+
+security = Security(app, user_datastore,
+         register_form=ExtendedRegisterForm)
+
+# Create the user db
+userdb.create_all()
+
+
+
 # Disable debug mode on prod
 if socket.gethostname() == 'spilltracker':
     app.config["DEBUG"] = False
+
+
 
 
 @app.route('/', methods=['GET'])
@@ -49,7 +127,7 @@ def reports_all():
 def export_excel(spill_id, timestamp=None):
     # Export to Excel template, with a timestamp version if needed
     report = db.get_report(spill_id, timestamp)
-    export_file = exporter.report_to_excel(report)
+    export_file = excel_export.report_to_excel(report)
     return send_file(export_file,
                      as_attachment=True,
                      attachment_filename=os.path.basename(export_file))
@@ -171,7 +249,7 @@ def save_attachments(request):
 @app.route('/all_data', methods=['GET'])
 def db_dump():
     # Divide db dump by project
-    export_file = exporter.dump_all_excel()
+    export_file = excel_export.dump_all_excel()
     return send_file(export_file,
                      as_attachment=True,
                      attachment_filename=os.path.basename(export_file))

@@ -2,6 +2,8 @@
 This file contains methods to convert among different coordinate types
 """
 
+# TODO: convert from latlon to x format when user clicks point on the map, or moves point.
+
 
 def convert_to_latlon(coordinate_type, coord_str):
     """

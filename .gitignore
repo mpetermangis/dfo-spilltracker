@@ -6,3 +6,4 @@ static/attachments/*
 !static/attachments/__init__.py
 templates/reports_*.xlsx
 templates/report_*.xlsx
+.env

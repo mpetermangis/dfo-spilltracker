@@ -1,6 +1,5 @@
 
 import settings
-import time
 import os
 from datetime import datetime, timedelta
 from sqlalchemy import func, create_engine, Column, Integer, String, Text, DateTime, Float, ForeignKey
@@ -86,6 +85,7 @@ class SpillReport(Base):
 
 
 class AttachedFile(Base):
+
     __tablename__ = "attachments"
 
     id = Column(Integer,

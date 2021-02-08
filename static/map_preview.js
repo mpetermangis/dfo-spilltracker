@@ -13,8 +13,10 @@ L.control.zoom({
 
 // Default marker, draggable
 var coordCenter = [0, 0]
-var marker = new L.CircleMarker(coordCenter, {draggable:'true'})
-marker.addTo(mymap)
+// var marker = new L.CircleMarker(coordCenter, {draggable:'true'})
+// Use marker, NOT CircleMarker (which is not draggable)
+// https://leafletjs.com/reference-1.7.1.html#marker
+var marker = L.marker(coordCenter, {draggable:'true'})
 
 // Check if saved_* vars have been initialized
 if ( (typeof(saved_latitude) != "undefined") && (typeof(saved_longitude) != "undefined") ){
@@ -26,23 +28,31 @@ if ( (typeof(saved_latitude) != "undefined") && (typeof(saved_longitude) != "und
     }
 }
 
-
 // Bind dragend event
-// marker.on('dragend', function(event){
-//     // var marker = event.target;
-//     var position = marker.getLatLng();
-//     var loc = new L.LatLng(position.lat, position.lng)
-//     marker.setLatLng(loc, {draggable:'true'});
-//     mymap.panTo(new L.LatLng(position.lat, position.lng))
-// })
+marker.on('dragend', function(event){
+    // var marker = event.target;
+    var position = marker.getLatLng();
+    // var loc = new L.LatLng(position.lat, position.lng)
+    marker.setLatLng(position, {draggable: 'true'});
+    // mymap.panTo(new L.LatLng(position.lat, position.lng))
+    // Update coordinate form fields
+})
+
+// Must also enable dragging: 
+// marker.dragging.enable();
+marker.addTo(mymap)
+marker.dragging.enable();
+
 
 // Tile background layers
-// var esriImagery = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+var esriImagery = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
 // var esriBase = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Terrain_Base/MapServer/tile/{z}/{y}/{x}'
-var mapboxImagery = 'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw'
+// var mapboxImagery = 'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw'
+
+
 
 L.tileLayer(
-    mapboxImagery, {
+    esriImagery, {
     maxZoom: 18,
     attribution: 'Map data &copy; <a href="https://www.esri.com/">ESRI</a>',
     id: 'mapbox.streets'
@@ -53,12 +63,11 @@ $('#coordinates').change( function() {
     var data = {}
     data.coord_str = $('#coordinates').val()
     data.coordinate_type = $('#coordinate_type').val()
-    var jdata = JSON.stringify(data)
 
     console.log('Sending: ' +jdata)
     var result = $.post({
         url: frontendHost + '/chk_coordinates', 
-        data: jdata,
+        data: JSON.stringify(data),
         dataType: "json",
         contentType: "application/json; charset=utf-8",
     })
@@ -75,7 +84,7 @@ $('#coordinates').change( function() {
         // Add coordinate on map
         // marker = new L.CircleMarker([data.lat, data.lon])
         coordCenter = [data.lat, data.lon]
-        marker.setLatLng(coordCenter)
+        marker.setLatLng(coordCenter, {draggable: 'true'})
         // marker.addTo(mymap)
         mymap.setView(coordCenter, 8)
     })
@@ -84,6 +93,5 @@ $('#coordinates').change( function() {
         console.log(errmsg)
         $('#coord_error').html(errmsg)
         $('#coord_error').removeClass('d-none')
-
     }) 
 })
