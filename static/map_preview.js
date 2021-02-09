@@ -28,6 +28,22 @@ if ( (typeof(saved_latitude) != "undefined") && (typeof(saved_longitude) != "und
     }
 }
 
+// TODO: cache current coordinates here
+var coordType
+var coordText
+var coordData
+
+function refreshCoords(){
+    /**
+     * Function called whenever coordinates are refreshed by any of the following:
+     * 1. (re)loading the report_form page
+     * 2. moving the marker on the map
+     * 3. changing the coordinate display type
+     *  */ 
+    
+}
+
+
 // Bind dragend event
 marker.on('dragend', function(event){
     // var marker = event.target;
@@ -35,7 +51,28 @@ marker.on('dragend', function(event){
     // var loc = new L.LatLng(position.lat, position.lng)
     marker.setLatLng(position, {draggable: 'true'});
     // mymap.panTo(new L.LatLng(position.lat, position.lng))
-    // Update coordinate form fields
+    // TODO: Update coordinate form fields from latlon
+    // var data = {}
+    // data.latitude = position.lat
+    // data.coordinate_type = position.lng
+
+    var jsonData = JSON.stringify(position)
+    console.log('Sending marker position from map: ' +jsonData)
+    var result = $.post({
+        url: frontendHost + '/latlon_to_coords', 
+        data: jsonData,
+        dataType: "json",
+        contentType: "application/json; charset=utf-8",
+    })
+    result.done(function(){
+        console.log('Coordinates sent for validation.')
+        var data = result.responseJSON.data
+        console.log(data)
+        var coordType = $('#coordinate_type').val()
+        // Set value of coordinate field from returned coordinates
+        $('#coordinates').val(data[coordType])
+    })
+
 })
 
 // Must also enable dragging: 
@@ -72,7 +109,7 @@ $('#coordinates').change( function() {
         contentType: "application/json; charset=utf-8",
     })
     result.done(function(){
-        console.log('Success')
+        console.log('Coordinates sent for validation.')
         // Hide error text if exists
         $('#coord_error').addClass('d-none')
         var data = result.responseJSON.data

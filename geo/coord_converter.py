@@ -1,8 +1,66 @@
+import math
 """
 This file contains methods to convert among different coordinate types
 """
 
 # TODO: convert from latlon to x format when user clicks point on the map, or moves point.
+
+
+def degree_to_decimal_min(degree_part):
+    """
+    Converts remainder part of a degree to decimal minutes
+    :param degree_part:
+    :return:
+    """
+    return round((degree_part * 60), 6)
+
+
+def degree_to_ms(degree_part):
+    """
+    Converts remainder part of a degree to minutes, seconds
+    :param degree_part:
+    :return:
+    """
+    (seconds_part, minutes) = math.modf(degree_part * 60)
+    seconds = seconds_part * 60
+    return minutes, seconds
+
+
+def coord_to_decimal_and_ms(coord):
+    (degree_part, degree_int) = math.modf(coord)
+    decimal_min = degree_to_decimal_min(degree_part)
+    (minutes, seconds) = degree_to_ms(degree_part)
+    return degree_int, decimal_min, int(round(minutes, 0)), int(round(seconds, 0))
+
+
+def convert_from_latlon(latitude, longitude):
+    """
+    Converts from lat-lon to coordinates in 3 formats for frontend:
+    Decimal Degrees (trivial)
+    Degrees Minutes Seconds
+    Degrees Decimal Minutes
+    :param latitude:
+    :param longitude:
+    :return:
+    """
+    (lat_degree, lat_decimal_min, lat_minutes, lat_seconds) = coord_to_decimal_and_ms(latitude)
+    (lon_degree, lon_decimal_min, lon_minutes, lon_seconds) = coord_to_decimal_and_ms(longitude)
+    decimal_degree = '%s,%s' % (latitude, longitude)
+    northing = 'N' if latitude > 0 else 'S'
+    easting = 'E' if longitude > 0 else 'W'
+    deg_decimal_mins = '%s %s %s %s %s %s' % (
+        lat_degree, lat_decimal_min, northing, lon_degree, lon_decimal_min, easting)
+    dms = '%s %s %s %s %s %s %s %s' % (
+        lat_degree, lat_minutes, lat_seconds, northing,
+        lon_degree, lon_minutes, lon_seconds, easting
+    )
+
+    print('%s  *   %s   *  %s' % (decimal_degree, deg_decimal_mins, dms))
+    coords = {'Decimal Degrees': decimal_degree,
+              'Degrees Decimal Minutes': deg_decimal_mins,
+              'Degrees Minutes Seconds': dms}
+    return coords
+    # return decimal_degree, deg_decimal_mins, dms
 
 
 def convert_to_latlon(coordinate_type, coord_str):

@@ -9,7 +9,7 @@ var frontendHost = hostbase
 if (frontendPort !== 80){
     frontendHost += ':' +frontendPort
 }
-console.log(frontendHost)
+console.log('Host: '+frontendHost)
 
 // Apply pattern validation for coordinate types
 $('#coordinate_type').change(function() {

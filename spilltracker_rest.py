@@ -176,6 +176,17 @@ def update_report(spill_id):
                            report=final_report)
 
 
+@app.route('/latlon_to_coords', methods=['POST'])
+def latlon_to_coords():
+    data = request.json
+    # decimal_degree, deg_decimal_mins, dms = coord_converter.convert_from_latlon(
+    #     data.get('latitude'), data.get('longitude')
+    # )
+    coords = coord_converter.convert_from_latlon(
+        data.get('lat'), data.get('lng'))
+    return jsonify(success=True, data=coords), 200
+
+
 @app.route('/chk_coordinates', methods=['POST'])
 def chk_coordinates():
     data = request.json
@@ -188,7 +199,6 @@ def chk_coordinates():
     else:
         data = {'lat': latitude, 'lon': longitude}
         return jsonify(success=True, msg=status, data=data), 200
-    # return resp
 
 
 @app.route('/save_report_data', methods=['POST'])
