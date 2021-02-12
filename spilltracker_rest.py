@@ -148,6 +148,7 @@ def show_report(spill_id, timestamp=None):
     report_timestamps = db.get_timestamps(spill_id)
     return render_template('report.html',
                            report=final_report,
+                           # marker_drag=False,
                            timestamps=report_timestamps)
 
 
@@ -158,6 +159,7 @@ def new_report():
                            spill_id=None,
                            action='New',
                            lookups=lookups.lu,
+                           # marker_drag=True,
                            report={})
 
 
@@ -173,6 +175,7 @@ def update_report(spill_id):
                            spill_id=spill_id,
                            action='Update',
                            lookups=lookups.lu,
+                           # marker_drag=True,
                            report=final_report)
 
 

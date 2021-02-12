@@ -11,22 +11,37 @@ L.control.zoom({
     position: 'topright'
 }).addTo(mymap)
 
-// Default marker, draggable
-var coordCenter = [0, 0]
+// Get coordinates and flags from data
+var saved_latitude = parseFloat($('#coordInfo').data('latitude'))
+var saved_longitude = parseFloat($('#coordInfo').data('longitude'))
+var markerdrag = $('#coordInfo').data('markerdrag')
+
+var editable = false
+if (markerdrag){
+    editable = true
+}
+console.log(`Coordinate: ${saved_latitude}, ${saved_longitude}, drag: ${editable}`)
+// if (staticMap){
+//     dragOption = false
+//     console.log('Map is static. Marker drag option: '+dragOption)
+// }
 // var marker = new L.CircleMarker(coordCenter, {draggable:'true'})
+
+// Default marker, draggable if not in a static view
+var coordCenter = [0, 0]
 // Use marker, NOT CircleMarker (which is not draggable)
 // https://leafletjs.com/reference-1.7.1.html#marker
-var marker = L.marker(coordCenter, {draggable:'true'})
+var marker = L.marker(coordCenter, {draggable: editable})
 
 // Check if saved_* vars have been initialized
-if ( (typeof(saved_latitude) != "undefined") && (typeof(saved_longitude) != "undefined") ){
-    if ( (Number.isFinite(saved_latitude)) && (Number.isFinite(saved_longitude))){
-        console.log('Report has lat-lon. Initialize map at '+saved_latitude+','+saved_longitude)
-        coordCenter = [saved_latitude, saved_longitude]
-        marker.setLatLng(coordCenter)
-        mymap.setView(coordCenter, 8)
-    }
+// if ( (typeof(saved_latitude) != "undefined") && (typeof(saved_longitude) != "undefined") ){
+if ( (Number.isFinite(saved_latitude)) && (Number.isFinite(saved_longitude))){
+    console.log('Report has lat-lon. Initialize map at '+saved_latitude+','+saved_longitude)
+    coordCenter = [saved_latitude, saved_longitude]
+    marker.setLatLng(coordCenter)
+    mymap.setView(coordCenter, 8)
 }
+// }
 
 // TODO: cache current coordinates here
 var coordType
@@ -43,19 +58,10 @@ function refreshCoords(){
     
 }
 
-
-// Bind dragend event
-marker.on('dragend', function(event){
-    // var marker = event.target;
-    var position = marker.getLatLng();
-    // var loc = new L.LatLng(position.lat, position.lng)
-    marker.setLatLng(position, {draggable: 'true'});
-    // mymap.panTo(new L.LatLng(position.lat, position.lng))
-    // TODO: Update coordinate form fields from latlon
-    // var data = {}
-    // data.latitude = position.lat
-    // data.coordinate_type = position.lng
-
+function updateCoordsFromLatLng(position){
+    /**
+     * position: a Leaflet LatLng object
+     */
     var jsonData = JSON.stringify(position)
     console.log('Sending marker position from map: ' +jsonData)
     var result = $.post({
@@ -70,23 +76,50 @@ marker.on('dragend', function(event){
         console.log(data)
         var coordType = $('#coordinate_type').val()
         // Set value of coordinate field from returned coordinates
-        $('#coordinates').val(data[coordType])
+        var newCoords = data[coordType]
+        console.log('Updated coords: '+newCoords)
+        $('#coordinates').val(newCoords)
+        // Update fixed lat-lon fields
+        $('#latitude').val(position.lat)
+        $('#longitude').val(position.lng)
     })
+}
 
+// Bind dragend event for marker
+marker.on('dragend', function(event){
+    // var marker = event.target;
+    var position = marker.getLatLng();
+    // var loc = new L.LatLng(position.lat, position.lng)
+    marker.setLatLng(position, {draggable: editable});
+    // mymap.panTo(new L.LatLng(position.lat, position.lng))
+    // TODO: Update coordinate form fields from latlon
+    // var data = {}
+    // data.latitude = position.lat
+    // data.coordinate_type = position.lng
+    updateCoordsFromLatLng(position)
 })
 
-// Must also enable dragging: 
-// marker.dragging.enable();
-marker.addTo(mymap)
-marker.dragging.enable();
+// Add or move marker on double click
+mymap.on("dblclick", function(e) {
+    // e.preventDefault()
+    // var clickedLatLng = e.target.getLatLng()
+    var clickedLatLng = e.latlng
+    console.log(`Double click at: ${clickedLatLng}`)
+    // console.log(`Double click at: ${clickedLatLng}`)
+    marker.setLatLng(clickedLatLng)
+    updateCoordsFromLatLng(clickedLatLng)
+})
 
+// Must also enable dragging:  marker.dragging.enable();
+marker.addTo(mymap)
+if (editable){
+    marker.dragging.enable();
+}
 
 // Tile background layers
 var esriImagery = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
 // var esriBase = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Terrain_Base/MapServer/tile/{z}/{y}/{x}'
 // var mapboxImagery = 'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw'
-
-
 
 L.tileLayer(
     esriImagery, {
@@ -101,7 +134,7 @@ $('#coordinates').change( function() {
     data.coord_str = $('#coordinates').val()
     data.coordinate_type = $('#coordinate_type').val()
 
-    console.log('Sending: ' +jdata)
+    console.log(`Updating latlon and map from coords: ${data}`)
     var result = $.post({
         url: frontendHost + '/chk_coordinates', 
         data: JSON.stringify(data),
@@ -118,12 +151,12 @@ $('#coordinates').change( function() {
         $('#longitude_calc').html(data.lon)
         $('#longitude').val(data.lon)
         console.log(result.responseJSON)
-        // Add coordinate on map
-        // marker = new L.CircleMarker([data.lat, data.lon])
+        
+        // Update coordinate on map
         coordCenter = [data.lat, data.lon]
-        marker.setLatLng(coordCenter, {draggable: 'true'})
-        // marker.addTo(mymap)
-        mymap.setView(coordCenter, 8)
+        marker.setLatLng(coordCenter, {draggable: editable})
+        // Set map center to new location, keep existing zoom
+        mymap.setView(coordCenter, mymap.getZoom())
     })
     result.fail(function(xhr, status, error) {
         var errmsg = result.responseJSON.msg

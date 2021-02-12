@@ -31,9 +31,9 @@ Create and activate a python3 virtualenv in your home folder, let's call it 'spi
 
 `cd ~`
 
-`virtualenv -p python3 spill`
+`virtualenv -p python3 polrep`
 
-`source ~/spill/bin/activate`
+`source ~/polrep/bin/activate`
 
 Confirm we are using the correct virtualenv instance of python:
 
@@ -74,13 +74,31 @@ Create a new PostgreSQL database, owned by the database user you just created:
 
 `sudo -u postgres createdb -O spilluser spilldb -E utf-8`
 
-Save the connection string for this DB as an environment variable. This will be picked up by SQLAlchemy in python. 
+Save the connection string for this DB as an environment variable. This will be picked up by SQLAlchemy in python. Create a .env file in the project root folder. 
+
+`cd ~/spilltracker`
+
+`touch .env`
+
+Edit the .env file and add the following env vars:
+
+`SPILL_TRACKER_DB_URL=postgresql://spilluser:<password>@localhost/spilldb`
+
+Open a python console and create salt and secret for the DB logins. In python create a different random string for each of the env vars below: 
+
+secrets.token_urlsafe(16)
+
+Add these to .env:
+
+SPILLDB_SECRET=*******
+SPILLDB_SALT=*******
+
 
 `sudo nano /etc/environment`
 
 Add this line:
 
-`SPILL_TRACKER_DB_URL=postgresql://spilluser:<password>@localhost/spilldb`
+
 
 Logout of the server and connect again via ssh. After re-connecting, you should have this enviro var:
 

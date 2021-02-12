@@ -60,7 +60,6 @@ def convert_from_latlon(latitude, longitude):
               'Degrees Decimal Minutes': deg_decimal_mins,
               'Degrees Minutes Seconds': dms}
     return coords
-    # return decimal_degree, deg_decimal_mins, dms
 
 
 def convert_to_latlon(coordinate_type, coord_str):

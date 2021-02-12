@@ -11,6 +11,8 @@
 
 {% set title = 'New/Update Report - CCG/DFO Spill Tracker' %}
 
+{# <script type="text/javascript" src="/static/map_init.js"></script> #}
+
 <main id="reportUpdate" role="main">
 
 <h2>{{ action }} Pollution Report
@@ -140,16 +142,19 @@
     <h5>Map Preview</h5>
 
     <div>Please update the coordinates in the field above. When finished entering coordinates, click outside the coordinate field and the map below will update automatically.</div>
-    <div class="form-group">
-        <label for="latitude">Latitude</label>
-        <input type="number" class="form-control spilldata" id="latitude" name="latitude"
+    <div class="form-group form-inline">
+        <label for="latitude">Latitude:</label>
+        <input type="number" class="form-control spilldata ml-2" id="latitude" name="latitude"
             value="{{ report.latitude }}" readonly>
-    </div>
-    <div class="form-group">
-        <label for="longitude">Longitude</label>
-        <input type="number" class="form-control spilldata" id="longitude" name="longitude"
+        <label for="longitude" class="ml-5">Longitude:</label>
+        <input type="number" class="form-control spilldata ml-2" id="longitude" name="longitude"
             value="{{ report.longitude }}" readonly>
     </div>
+    {# <div class="form-group form-inline">
+        
+    </div> #}
+    {# Set values for lat-lon in HTML data #}
+    <div id="coordInfo" data-latitude="{{ report.latitude }}" data-longitude="{{ report.longitude }}" data-markerdrag="true"></div>
 
     {# <div class="d-inline mr-2">Latitude: </div> <div class="d-inline" id="latitude_calc"></div>
     <br>
