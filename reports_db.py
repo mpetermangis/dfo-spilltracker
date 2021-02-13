@@ -9,6 +9,7 @@ from sqlalchemy.exc import SQLAlchemyError
 import psycopg2
 import traceback
 from geo import coord_converter
+import lookups
 
 engine = create_engine(settings.SPILL_TRACKER_DB_URL)
 
@@ -127,15 +128,22 @@ def empty_string_to_null(data):
     return db_data
 
 
-def add_html_timestamps(data):
+def format_timestamps(data):
     report_date = data.get('report_date')
     spill_date = data.get('spill_date')
+    report_timezone = data.get('report_timezone')
+    spill_timezone = data.get('spill_timezone')
     last_updated = data.get('last_updated')
     data['last_updated_ts'] = last_updated.strftime(settings.filesafe_timestamp)
+    data['last_updated_ccg'] = last_updated.strftime(settings.ccg_display_fmt)
     if report_date:
         data['report_date_html'] = report_date.strftime(settings.html_timestamp)
+        data['report_date_ccg'] = report_date.strftime(settings.ccg_display_fmt)
+        data['report_tz_ccg'] = lookups.tz_reversed.get(report_timezone)
     if spill_date:
         data['spill_date_html'] = spill_date.strftime(settings.html_timestamp)
+        data['spill_date_ccg'] = spill_date.strftime(settings.ccg_display_fmt)
+        data['spill_tz_ccg'] = lookups.tz_reversed.get(spill_timezone)
     return data
 
 
@@ -237,7 +245,7 @@ def get_report_for_display(spill_id, ts_url=None):
 
     # Convert None to empty string for display
     display_report = null_to_empty_string(final_report)
-    display_report = add_html_timestamps(display_report)
+    display_report = format_timestamps(display_report)
 
     # Add attachments
     attachments = get_attachments(spill_id)
@@ -278,7 +286,13 @@ def get_timestamps(spill_id):
         timestamp = result[0]
         ts_url = timestamp.strftime(settings.filesafe_timestamp)
         ts_display = timestamp.strftime(settings.display_date_fmt)
-        timestamps.append({'ts': timestamp, 'ts_url': ts_url, 'ts_display': ts_display})
+        ts_ccg_format = timestamp.strftime(settings.ccg_display_fmt)
+        timestamps.append({
+            'ts': timestamp,
+            'ts_url': ts_url,
+            'ts_display': ts_display,
+            'ts_ccg_format': ts_ccg_format
+        })
     session.close()
     logger.info(timestamps)
     return timestamps

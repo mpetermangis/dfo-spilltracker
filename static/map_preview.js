@@ -146,9 +146,9 @@ $('#coordinates').change( function() {
         // Hide error text if exists
         $('#coord_error').addClass('d-none')
         var data = result.responseJSON.data
-        $('#latitude_calc').html(data.lat)
+        // $('#latitude_calc').html(data.lat)
         $('#latitude').val(data.lat)
-        $('#longitude_calc').html(data.lon)
+        // $('#longitude_calc').html(data.lon)
         $('#longitude').val(data.lon)
         console.log(result.responseJSON)
         

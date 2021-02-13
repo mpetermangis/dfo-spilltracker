@@ -45,9 +45,12 @@ base_dir = os.path.dirname(os.path.realpath(__file__))
 display_date_fmt = '%Y-%m-%d %H:%M:%S'
 filesafe_timestamp = '%Y%m%d-%H%M%S'
 html_timestamp = '%Y-%m-%dT%H:%M'
+ccg_display_fmt = '%Y-%m-%d %H%M'
 
 IMAGE_FORMATS = ['jpg', 'jpeg', 'tif', 'tiff', 'png']
 ALLOWED_EXTENSIONS = IMAGE_FORMATS + ['doc', 'docx', 'pdf']
+
+PROD_SERVER = socket.gethostname() == 'spilltracker'
 
 
 # Db conn settings
@@ -67,3 +70,10 @@ db_salt = os.environ.get('SPILLDB_SALT')
 if not db_secret or not db_salt:
     logger.error('SPILLDB_SECRET and SPILLDB_SALT env vars required!')
     sys.exit(1)
+
+# Load Email credentials
+smtp_user = os.environ.get('SPILL_SMTP_USER')
+smtp_pass = os.environ.get('SPILL_SMTP_PASS')
+smtp_server = 'email-smtp.ca-central-1.amazonaws.com'
+smtp_port = 587
+# print('%s %s' % (smtp_user, smtp_pass))

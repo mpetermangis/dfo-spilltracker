@@ -1,5 +1,11 @@
 from flask import Flask, flash, request, jsonify, send_file, render_template, redirect, url_for, session
+from flask_login import current_user
+from flask_security.forms import RegisterForm, Required
+from wtforms import StringField
+# BooleanField, Field, HiddenField, PasswordField, \
+#     , SubmitField, ValidationError, validators
 from flask_cors import CORS
+from flask_mail import Mail
 from werkzeug.utils import secure_filename
 import atexit
 import settings
@@ -9,6 +15,7 @@ import os
 import socket
 from geo import coord_converter
 import excel_export
+from reports_server import rep
 
 # Flask login / security modules
 from flask_sqlalchemy import SQLAlchemy
@@ -21,10 +28,19 @@ port=5000
 # app = Flask(__name__, static_folder="attachments")
 app = Flask(__name__)
 CORS(app)
+
+# Disable debug mode on prod
+# if socket.gethostname() == 'spilltracker':
+if settings.PROD_SERVER:
+    app.config["DEBUG"] = False
+
 app.config['UPLOAD_FOLDER'] = 'static/attachments'
 # Disable caching on downloaded files
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
+
+# Good example of Flask initialization
+# https://gist.github.com/skyuplam/ffb1b5f12d7ad787f6e4
 
 # Related to user logins (Flask-security)
 app.config['DEBUG'] = True
@@ -34,21 +50,35 @@ app.config['SQLALCHEMY_DATABASE_URI'] = settings.SPILL_TRACKER_DB_URL
 app.config['SECURITY_REGISTERABLE'] = True
 # There is another configuration value to change the URL if desired:
 # Use cryptic URL to prevent spam registration
-# app.config['SECURITY_REGISTER_URL'] = '/create_account'
 app.config['SECURITY_REGISTER_URL'] = '/TuychXJzpBhv2mmZcGt8bQ'
+app.config['SECURITY_CHANGEABLE'] = True
+# We're using PBKDF2 with salt.
+app.config['SECURITY_PASSWORD_HASH'] = 'pbkdf2_sha512'
 app.config['SECURITY_PASSWORD_SALT'] = settings.db_salt
 # https://pythonhosted.org/Flask-Security/configuration.html#miscellaneous
-app.config['SECURITY_SEND_REGISTER_EMAIL'] = False
+app.config['SECURITY_SEND_REGISTER_EMAIL'] = True
 
 # Disable caching on downloaded files
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 # Disable track modifications, see https://github.com/pallets/flask-sqlalchemy/issues/365
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Flask-Security optionally sends email notification to users upon registration, password reset, etc.
+# It uses Flask-Mail behind the scenes.
+# Set mail-related config values.
 app.config['SECURITY_RECOVERABLE'] = True
+app.config['SECURITY_EMAIL_SENDER'] = 'no-reply@marinepollution.ca'
+# Replace the next five lines with your own SMTP server settings
+app.config['MAIL_SERVER'] = settings.smtp_server
+app.config['MAIL_PORT'] = settings.smtp_port
+app.config['MAIL_USE_SSL'] = True
+app.config['MAIL_USERNAME'] = settings.smtp_user
+app.config['MAIL_PASSWORD'] = settings.smtp_pass
 
 
 # Setup user DB and flask-security
-# Create database connection object
+# Initialize Flask-Mail and SQLAlchemy
+mail = Mail(app)
 userdb = SQLAlchemy(app)
 
 # Define models
@@ -74,117 +104,64 @@ class User(userdb.Model, UserMixin):
                                 backref=userdb.backref('users', lazy='dynamic'))
 
 
-# Setup Flask-Security datastore
-user_datastore = SQLAlchemyUserDatastore(userdb, User, Role)
-
 # Use a custom registration form
-from flask_security.forms import RegisterForm, Required
-from wtforms import BooleanField, Field, HiddenField, PasswordField, \
-    StringField, SubmitField, ValidationError, validators
-
-
 class ExtendedRegisterForm(RegisterForm):
     staff_name = StringField('Full Name', [Required()])
     # last_name = StringField('Last Name', [Required()])
 
 
+# Initialize the SQLAlchemy data store and Flask-Security.
+user_datastore = SQLAlchemyUserDatastore(userdb, User, Role)
 security = Security(app, user_datastore,
          register_form=ExtendedRegisterForm)
 
-# Create the user db
-userdb.create_all()
+
+# Register blueprints for various endpoints
+app.register_blueprint(rep)
 
 
 
-# Disable debug mode on prod
-if socket.gethostname() == 'spilltracker':
-    app.config["DEBUG"] = False
+def get_current_user():
+    """
+    Gets and prints the current user id, email
+    :return: user object
+    """
+    logger.info('User: %s (id %s)' % (current_user.email, current_user.id))
+    return current_user
 
 
+# Executes before the first request is processed.
+@app.before_first_request
+def before_first_request():
+    # Create any database tables that don't exist yet.
+    userdb.create_all()
+
+    # Create the Roles, unless they already exist
+    user_datastore.find_or_create_role(name='admin', description='Administrator')
+    user_datastore.find_or_create_role(name='user', description='CCG User')
+    user_datastore.find_or_create_role(name='observer', description='Observer with read-only access')
+
+    userdb.session.commit()
+
+
+@app.route('/bb', methods=['GET'])
+def bb():
+    return render_template('security/base.html')
 
 
 @app.route('/', methods=['GET'])
+@login_required
 def index():
-    # Redirect to main page
-    # user_id = session['user_id']
-    # logger.info('User: %s' % user_id)
-    return render_template('index.html')
-
-
-@app.route('/reports', methods=['GET'])
-def reports_all():
-    """
-    Display a list of all reports, by default sorted reverse chrono
-    :return:
-    """
-    reports_list = db.list_all_reports()
-    return render_template('reports_list.html',
-                           reports_list=reports_list)
-
-
-@app.route('/export/<spill_id>/<timestamp>', methods=['GET'])
-@app.route('/export/<spill_id>', methods=['GET'])
-def export_excel(spill_id, timestamp=None):
-    # Export to Excel template, with a timestamp version if needed
-    report = db.get_report(spill_id, timestamp)
-    export_file = excel_export.report_to_excel(report)
-    return send_file(export_file,
-                     as_attachment=True,
-                     attachment_filename=os.path.basename(export_file))
-
-
-@app.route('/report/<spill_id>', methods=['GET'])
-@app.route('/report/<spill_id>/<timestamp>', methods=['GET'])
-def show_report(spill_id, timestamp=None):
-    """
-    Gets either the latest data for a spill report, or from a specific point in time
-    :param spill_id:
-    :param timestamp:
-    :return:
-    """
-    final_report = db.get_report_for_display(spill_id, timestamp)
-    # Render the show_report template (a read-only display of a report's state at a given time),
-    # along with links to all of the timestamps for this report
-    report_timestamps = db.get_timestamps(spill_id)
-    return render_template('report.html',
-                           report=final_report,
-                           # marker_drag=False,
-                           timestamps=report_timestamps)
-
-
-@app.route('/report/new', methods=['GET'])
-def new_report():
-    # Display the report form template, keep it blank (no data)
-    return render_template('report_form.html',
-                           spill_id=None,
-                           action='New',
-                           lookups=lookups.lu,
-                           # marker_drag=True,
-                           report={})
-
-
-@app.route('/report/<spill_id>/update', methods=['GET'])
-def update_report(spill_id):
-    """
-    Display the report form using the latest incremental data for this spill id
-    :param spill_id:
-    :return:
-    """
-    final_report = db.get_report_for_display(spill_id)
-    return render_template('report_form.html',
-                           spill_id=spill_id,
-                           action='Update',
-                           lookups=lookups.lu,
-                           # marker_drag=True,
-                           report=final_report)
+    # Users must be authenticated to view the home page, but they don't have to have any particular role.
+    # Flask-Security will display a login form if the user isn't already authenticated.
+    user = get_current_user()
+    return render_template('index.html',
+                           user=user)
 
 
 @app.route('/latlon_to_coords', methods=['POST'])
 def latlon_to_coords():
     data = request.json
-    # decimal_degree, deg_decimal_mins, dms = coord_converter.convert_from_latlon(
-    #     data.get('latitude'), data.get('longitude')
-    # )
     coords = coord_converter.convert_from_latlon(
         data.get('lat'), data.get('lng'))
     return jsonify(success=True, data=coords), 200
@@ -204,61 +181,6 @@ def chk_coordinates():
         return jsonify(success=True, msg=status, data=data), 200
 
 
-@app.route('/save_report_data', methods=['POST'])
-def save_report_data():
-    """
-    The forms in both /report/new and /report/<spill_id>/update feed to this endpoint
-    If it is a NEW report, field spill_id will be blank
-    :return:
-    """
-    # data = request.json
-    # Handle files if attached
-    attachments = save_attachments(request)
-    # Use form data directly, no jQuery
-    data = request.form
-    if data:
-        # If using form data, type will be ImmutableMultiDict. Convert to regular dict
-        # https://stackoverflow.com/a/45713753
-        data = data.to_dict()
-
-    # Add attachments before saving
-    data['attachments'] = attachments
-    spill_id, success, status = db.save_report_data(data)
-    if success:
-        logger.info('Saved OK, redirect to show_report, spill id: %s' % spill_id )
-        return redirect(url_for('show_report', spill_id=spill_id))
-    else:
-        resp = jsonify(success=False, msg=status)
-    return resp
-
-
-# Handle file uploads
-def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in settings.ALLOWED_EXTENSIONS
-
-
-def save_attachments(request):
-    attached = []
-    if 'attachments' not in request.files:
-        flash('No file part')
-        return attached
-    # Get multiple files
-    files = request.files.getlist('attachments')
-    # if user does not select file, browser also
-    # submit an empty part without filename
-    # if file.filename == '':
-    #     flash('No selected file')
-    #     return attached
-    for file in files:
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            attached.append(
-                os.path.basename(filename))
-    return attached
-
-
 @app.route('/all_data', methods=['GET'])
 def db_dump():
     # Divide db dump by project
@@ -276,8 +198,9 @@ def stop_app():
 def main():
     # THIS MAIN METHOD IS ***NOT*** CALLED IF RUNNING FROM WSGI!
     # If running under WSGI, do logging config etc in the WSGI module, not here.
+    # ONLY FOR LOCAL DEVELOPMENT
 
-    start_msg = 'Spilltracker Flask server on port %s' % port
+    start_msg = 'Spilltracker DEVELOPMENT Flask server on port %s' % port
     logger.info(start_msg)
 
     atexit.register(stop_app)
@@ -285,6 +208,7 @@ def main():
     app.run(
         host="0.0.0.0",
         port=port,
+        ssl_context='adhoc',
         debug=True
     )
 

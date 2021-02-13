@@ -21,7 +21,8 @@
 {% endif %}
 </h2>
 
-<form id="reportForm" class="mb-5" action="/save_report_data" method="post" enctype="multipart/form-data">
+{# <form id="reportForm" class="mb-5" action="/save_report_data" method="post" enctype="multipart/form-data"> #}
+<form id="reportForm" class="mb-5" action="{{ url_for('report.save_report_data') }}" method="post" enctype="multipart/form-data">
             
     <!-- Hidden Input for spill id, only used if updating  -->
     <input class="spilldata" type="hidden" id="spill_id" name="spill_id" 
@@ -58,14 +59,23 @@
                 value="{{ report.report_date_html }}">
         </div>
 
+        {# {% for tz_display, tz in lookups.timezones %}
+        <p>Display: {{ tz_display }}, Internal: {{ tz }}</p><br>
+        {% endfor %} #}
+
         <div class="form-group ml-5">
             <label for="report_timezone">Timezone</label>
             <select class="form-control spilldata" id="report_timezone" name="report_timezone">
-                {% for tz in lookups.timezones %}
-                    <option value="{{ tz }}" 
-                        {% if report.report_timezone==tz %} selected {% endif %}>
-                        {{ tz }}</option>
-                {% endfor %}
+            {% for tz_display, tz in lookups.timezones %}
+                <option value="{{ tz }}" {% if report.report_timezone==tz %} selected {% endif %}>{{ tz_display }}</option>
+            {% endfor %}
+                {# {% for tz_dict in lookups.timezones %}
+                    {% for tz_display, tz in tz_dict.items() %}
+                        <option value="{{ tz }}" 
+                            {% if report.report_timezone==tz %} selected {% endif %}>
+                            {{ tz_display }}</option>
+                    {% endfor %}
+                {% endfor %} #}
             </select>
         </div>
     </div>
@@ -80,11 +90,14 @@
         <div class="form-group ml-5">
             <label for="spill_timezone">Timezone</label>
             <select class="form-control spilldata" id="spill_timezone" name="spill_timezone">
-                {% for tz in lookups.timezones %}
+            {% for tz_display, tz in lookups.timezones %}
+                <option value="{{ tz }}" {% if report.spill_timezone==tz %} selected {% endif %}>{{ tz_display }}</option>
+            {% endfor %}
+                {# {% for tz in lookups.timezones %}
                     <option value="{{ tz }}"
                         {% if report.spill_timezone==tz %} selected {% endif %}>
                         {{ tz }}</option>
-                {% endfor %}
+                {% endfor %} #}
             </select>
         </div>
     </div>
@@ -113,6 +126,14 @@
 
     <hr>
     <h4>Situation Details</h4>
+    <h5>Spill Location</h5>
+    <div>The spill location can be specified in two ways: 
+    <ul>
+        <li> by entering coordinates in the field below, using one of coordinate formats</li>
+        <li> by dragging the marker in the map, or double-clicking on the map at the desired location</li>
+    </ul>
+    In either case, the coordinates in the field below and the marker location on the map will be synchronized. </div> 
+    {# <div> Please update the coordinates in the field above. When finished entering coordinates, click outside the coordinate field and the map below will update automatically.</div> #}
     <div class="form-row">
         <div class="form-group">
             <label for="coordinate_type">Coordinates Type</label>
@@ -125,7 +146,7 @@
                 {% endfor %}
             </select>
             <small id="coordTypeHelp" class="form-text text-muted">
-                Coordinates internally stored as latitude-longitude.
+                Coordinates are stored internally as latitude-longitude.
             </small>
         </div>
         <div class="form-group ml-5">
@@ -139,9 +160,7 @@
         </div>
     </div>
 
-    <h5>Map Preview</h5>
-
-    <div>Please update the coordinates in the field above. When finished entering coordinates, click outside the coordinate field and the map below will update automatically.</div>
+    {# <h5>Map Preview</h5> #}
     <div class="form-group form-inline">
         <label for="latitude">Latitude:</label>
         <input type="number" class="form-control spilldata ml-2" id="latitude" name="latitude"

@@ -99,10 +99,46 @@ SPILLDB_SALT=*******
 Add this line:
 
 
-
 Logout of the server and connect again via ssh. After re-connecting, you should have this enviro var:
 
 `echo SPILL_TRACKER_DB_URL`
+
+## Full-text search
+
+This might work:
+https://github.com/blakev/Flask-WhooshAlchemy3
+https://github.com/blakev/Flask-WhooshAlchemy3/commit/9a3c9d00f69a6d69903d9750596976304fab5fab
+
+
+## Flask Initialization
+
+Good example code:
+https://gist.github.com/skyuplam/ffb1b5f12d7ad787f6e4
+
+Flask-security templates are here:
+https://github.com/mattupstate/flask-security
+
+## Troubleshooting
+
+**None** of the Flask-security endpoints are working, such as /login, /reset. 
+Why? Because my browser had a previously-stored session which was being used, so I was already logged in. Need to logout first, hit this endpoint:
+http://0.0.0.0:5000/logout
+Now it's working as expected. 
+
+## Testing with SSL on localhost
+
+Some functions of the server, especially related to login/registration page, require SSL. This is a pain when testing on localhost. In Chrome, go to:
+chrome://flags/#allow-insecure-localhost
+Then set "Allow invalid certificates for resources loaded from localhost" to Enabled. 
+In Flask, run the app with `ssl_context='adhoc'`
+Yes, this works, no more warnings! 
+
+### Creating a self-signed cert
+
+This should not be needed if running flask with SSL adhoc, but just in case:
+https://blog.miguelgrinberg.com/post/running-your-flask-application-over-https
+
+
 
 ## Web Server Setup
 
@@ -192,11 +228,14 @@ Confirm that nginx config is ok:
 
 `sudo nginx -t`
 
-### Domain and SSL
+### Domain Registration
 
-For a production service, need to have a domain and SSL enabled.  I got a virtual domain from no-ip.com:  spilltracker.ddns.net.  This point to the IP address of the AWS server. 
+For a production service, need to have a domain and SSL enabled.  We registered the domain `marinepollution.ca` using Amazon Route 53, and added an A record pointing to the Elastic IP address of the AWS server.  This IP address is shown on the Instances page: https://ca-central-1.console.aws.amazon.com/ec2/v2/home?region=ca-central-1#Instances:instanceState=running
+The current IP address is shown in the Elastic IP column: 52.60.122.16
 
-To enable SSL. 
+### Enabling SSL
+
+All modern websites must use Secure Socket Layer (SSL) with a valid SSL certificate. To create an SSL cert, follow these steps: 
 
 `sudo apt-get update`
 
@@ -209,3 +248,29 @@ Allow nginx to modify your conf file directly:
 `sudo service nginx restart`
 
 Now the web service should be available through SSL. Backend will continue to be available locally through the port in the uwsgi command.  Try accessing it from an external web browser. 
+
+## Email Setup
+
+Before doing this, we need to have a registered domain.  For this project, we registered the domain `marinepollution.ca` and added an A record for the Elastic IP address assigned to the server. 
+
+We are using Amazon's Simple Email Service (SES) to send emails using Simple Mail Transfer Protocol (SMTP).  First, we need to add this domain so that we can send email from any address `@marinepollution.ca`.  In the SES main screen, click Manage Identities.  If the domain is not already listed under Domain Identities, click Verify a New Domain. You will be prompted to add a few DNS records for this domain, to allow sending emails.  Since we registered the domain using Amazon Route 53, these DNS records can be created automatically, simply click the Use Route 53 button at bottom-right.  Wait a minute and refresh the page, the domain should have green status for all three of these: Verification Status, DKIM Status, Enabled for Sending. 
+
+We also need to create and download SMTP credentials.  The credentials are only shown once; be sure to save the credentials file in a safe place. 
+
+Once this is done, we can send emails using any address that ends with `@marinepollution.ca`, for example:
+`updates@marinepollution.ca`
+`notifications@marinepollution.ca`
+`no-reply@marinepollution.ca`
+
+To test sending emails, use this example code:
+https://docs.aws.amazon.com/ses/latest/DeveloperGuide/examples-send-using-smtp.html
+
+The list of SMTP endpoints is here:
+https://docs.aws.amazon.com/general/latest/gr/ses.html
+Be sure to use the list of SMTP Endpoints, ***NOT*** the list of SES endpoints which is just above it on that page. 
+
+Any newly verified domain is put in the Amazon SES Sandbox by default, with the following restrictions:
+https://docs.aws.amazon.com/ses/latest/DeveloperGuide/request-production-access.html
+This page also describes how to get out of the sandbox.  It is a good idea to send a number of test emails while still in the sandbox, and ensure that the receiving domain does not mark them as Spam or suspicious.  After ensuring that emails are consistently being delivered, then follow the instructions to get out of the sandbox. 
+
+
