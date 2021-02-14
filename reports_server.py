@@ -39,30 +39,30 @@ def reports_all():
                            reports_list=reports_list)
 
 
-@rep.route('/export/<spill_id>/<timestamp>', methods=['GET'])
-@rep.route('/export/<spill_id>', methods=['GET'])
-def export_excel(spill_id, timestamp=None):
+@rep.route('/export/<report_num>/<timestamp>', methods=['GET'])
+@rep.route('/export/<report_num>', methods=['GET'])
+def export_excel(report_num, timestamp=None):
     # Export to Excel template, with a timestamp version if needed
-    report = db.get_report(spill_id, timestamp)
+    report = db.get_report(report_num, timestamp)
     export_file = excel_export.report_to_excel(report)
     return send_file(export_file,
                      as_attachment=True,
                      attachment_filename=os.path.basename(export_file))
 
 
-@rep.route('/<spill_id>', methods=['GET'])
-@rep.route('/<spill_id>/version/<timestamp>', methods=['GET'])
-def show_report(spill_id, timestamp=None):
+@rep.route('/<report_num>', methods=['GET'])
+@rep.route('/<report_num>/version/<timestamp>', methods=['GET'])
+def show_report(report_num, timestamp=None):
     """
     Gets either the latest data for a spill report, or from a specific point in time
-    :param spill_id:
+    :param report_num:
     :param timestamp:
     :return:
     """
-    final_report = db.get_report_for_display(spill_id, timestamp)
+    final_report = db.get_report_for_display(report_num, timestamp)
     # Render the show_report template (a read-only display of a report's state at a given time),
     # along with links to all of the timestamps for this report
-    report_timestamps = db.get_timestamps(spill_id)
+    report_timestamps = db.get_timestamps(report_num)
     return render_template('report.html',
                            report=final_report,
                            # marker_drag=False,
@@ -73,38 +73,37 @@ def show_report(spill_id, timestamp=None):
 def new_report():
     # Display the report form template, keep it blank (no data)
     return render_template('report_form.html',
-                           spill_id=None,
+                           report_num=None,
                            action='New',
                            lookups=lookups.lu,
                            # marker_drag=True,
                            report={})
 
 
-@rep.route('/<spill_id>/update', methods=['GET'])
-def update_report(spill_id):
+@rep.route('/<report_num>/update', methods=['GET'])
+def update_report(report_num):
     """
     Display the report form using the latest incremental data for this spill id
-    :param spill_id:
+    :param report_num:
     :return:
     """
-    final_report = db.get_report_for_display(spill_id)
+    final_report = db.get_report_for_display(report_num)
     return render_template('report_form.html',
-                           spill_id=spill_id,
+                           report_num=report_num,
                            action='Update',
                            lookups=lookups.lu,
                            # marker_drag=True,
                            report=final_report)
 
+
 @rep.route('/save_report_data', methods=['POST'])
 def save_report_data():
     """
-    The forms in both /report/new and /report/<spill_id>/update feed to this endpoint
-    If it is a NEW report, field spill_id will be blank
+    The forms in both /report/new and /report/<report_num>/update feed to this endpoint
+    If it is a NEW report, field report_num will be blank
     :return:
     """
-    # data = request.json
-    # Handle files if attached
-    attachments = save_attachments(request)
+
     # Use form data directly, no jQuery
     data = request.form
     if data:
@@ -112,12 +111,17 @@ def save_report_data():
         # https://stackoverflow.com/a/45713753
         data = data.to_dict()
 
-    # Add attachments before saving
+    # Handle files if attached
+    # report_num = data.get('report_num')
+    attachments = save_attachments_to_disk(request)
+
+    # Add attachments before saving to DB
     data['attachments'] = attachments
-    spill_id, success, status = db.save_report_data(data)
+    data['user_id'] = current_user.id
+    spill_id, report_num, success, status = db.save_report_data(data)
     if success:
-        logger.info('Saved OK, redirect to show_report, spill id: %s' % spill_id )
-        return redirect(url_for('report.show_report', spill_id=spill_id))
+        logger.info('Saved OK, redirect to show_report: %s' % report_num)
+        return redirect(url_for('report.show_report', report_num=report_num))
     else:
         resp = jsonify(success=False, msg=status)
     return resp
@@ -129,22 +133,23 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in settings.ALLOWED_EXTENSIONS
 
 
-def save_attachments(request):
+def save_attachments_to_disk(request):
     attached = []
     if 'attachments' not in request.files:
         flash('No file part')
         return attached
+
+    # Create folder for uploads if needed
+    # report_uploads = os.path.join(settings.upload_folder, report_num)
+    # os.makedirs(report_uploads, exist_ok=True)
+
     # Get multiple files
     files = request.files.getlist('attachments')
-    # if user does not select file, browser also
-    # submit an empty part without filename
-    # if file.filename == '':
-    #     flash('No selected file')
-    #     return attached
     for file in files:
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            file.save(os.path.join(settings.attachments, filename))
             attached.append(
                 os.path.basename(filename))
+    logger.info('Saved attachments: %s' % attached)
     return attached

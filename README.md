@@ -33,7 +33,7 @@ Create and activate a python3 virtualenv in your home folder, let's call it 'spi
 
 `virtualenv -p python3 polrep`
 
-`source ~/polrep/bin/activate`
+`source ~/venv/polrep/bin/activate`
 
 Confirm we are using the correct virtualenv instance of python:
 
@@ -90,14 +90,11 @@ secrets.token_urlsafe(16)
 
 Add these to .env:
 
-SPILLDB_SECRET=*******
-SPILLDB_SALT=*******
+`SPILLDB_SECRET=*******`
+`SPILLDB_SALT=*******`
 
-
+Or, use the following file to make the environment vars global.  But a `.env` file is the better option. 
 `sudo nano /etc/environment`
-
-Add this line:
-
 
 Logout of the server and connect again via ssh. After re-connecting, you should have this enviro var:
 
@@ -108,7 +105,6 @@ Logout of the server and connect again via ssh. After re-connecting, you should 
 This might work:
 https://github.com/blakev/Flask-WhooshAlchemy3
 https://github.com/blakev/Flask-WhooshAlchemy3/commit/9a3c9d00f69a6d69903d9750596976304fab5fab
-
 
 ## Flask Initialization
 
@@ -139,26 +135,25 @@ This should not be needed if running flask with SSL adhoc, but just in case:
 https://blog.miguelgrinberg.com/post/running-your-flask-application-over-https
 
 
-
 ## Web Server Setup
 
 We will use uwsgi to serve this Python (flask) web app. Test the configuration by serving locally. First, open a second terminal so that you can see the results:
 
-`cd ~/dfo-spilltracker`
+`cd ~/spilltracker`
 
-`uwsgi --socket 0.0.0.0:5000 --protocol=http -w wsgi:app`
+`uwsgi --socket 0.0.0.0:5000 --protocol=http -w wsgi:application`
 
-This means: serve the wsgi app (in file wsgi.py) on local port 5000, using HTTP protocol. Switch to the other terminal and try to access this app: 
+Test serving the wsgi app (in file wsgi.py) on local port 5000, using HTTP protocol. Switch to the other terminal and try to access this app: 
 
 `curl localhost:5000` 
 
 If successful, should see a bunch of HTML code for the CCG/DFO Spill Tracker system.  Go back to other terminal and press Ctrl+C to shut down uwsgi for now.  Now try the full command that we will use in supervisor:
 
-`/home/ubuntu/spill/bin/uwsgi --socket 127.0.0.1:3031 --wsgi-file /home/ubuntu/dfo-spilltracker/wsgi.py -H /home/ubuntu/spill --chdir /home/ubuntu/dfo-spilltracker --lazy-apps --processes 4 --threads 2 --stats 127.0.0.1:9191`
+`/home/spill/venv/polrep/bin/uwsgi --socket 127.0.0.1:3031 --wsgi-file /home/spill/spilltracker/wsgi.py -H /home/spill/venv/polrep --chdir /home/spill/spilltracker --lazy-apps --processes 4 --threads 2 --stats 127.0.0.1:9191`
 
 That's quite a a mouthful. Let's break it down:
 
-`/home/ubuntu/spill/bin/uwsgi` 
+`/home/spill/venv/polrep/bin/uwsgi` 
 
 Full path to the uwsgi Python server in our virtual env. 
 
@@ -166,15 +161,15 @@ Full path to the uwsgi Python server in our virtual env.
 
 Internal socket where the app will be accessible. Nginx public-facing web server will proxy requests to this internal socket. 
 
-`--wsgi-file /home/ubuntu/dfo-spilltracker/wsgi.py`
+`--wsgi-file /home/spill/spilltracker/wsgi.py`
 
 Specify which wsgi file we will use. 
 
-`-H /home/ubuntu/spill`
+`-H /home/spill/venv/polrep`
 
 The path to the Python venv. 
 
-`--chdir /home/ubuntu/dfo-spilltracker` 
+`--chdir /home/spill/spilltracker` 
 
 Run from this folder. If you don't do this, uwsgi won't be able to find your modules, since it does not know where to look for them, other than the python venv. 
 
@@ -184,7 +179,7 @@ This option, in contrast to the `--master` option, ensures that each worker is l
 
 `--processes 4 --threads 2`
 
-uWSGI spawn 4 childs each with 2 threads. 
+uWSGI spawn 4 children each with 2 threads. 
 
 `--stats 127.0.0.1:9191`
 
@@ -196,7 +191,7 @@ We will now create a supervisor config to run the uwsgi service.
 
 The supervisor conf file has already been added to this git repo. Only need to copy it to the supervisor active conf folder, and fill in the postgres password in the environment section:
 
-`sudo cp /home/ubuntu/dfo-spilltracker/conf/supervisor.spill.conf /etc/supervisor/conf.d/supervisor.spill.conf`
+`sudo cp /home/spill/spilltracker/conf/supervisor.spill.conf /etc/supervisor/conf.d/supervisor.spill.conf`
 
 `sudo supervisorctl reload`
 
@@ -206,7 +201,7 @@ Ensure that the server is running:
 
 `sudo tail -f /var/log/supervisor/spill-stderr*.log`
 
-Should see multiple entries like "spawned uWSGI process..." blah blah
+Should see multiple entries like "spawned uWSGI worker..." blah blah
 
 ### Nginx setup
 

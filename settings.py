@@ -41,6 +41,9 @@ def setup_logger(name, level=logging.INFO):
 logger = setup_logger(__name__)
 
 base_dir = os.path.dirname(os.path.realpath(__file__))
+# upload_folder = os.environ.get('UPLOAD_FOLDER')
+upload_root = os.path.join(base_dir, 'uploads')
+attachments = os.path.join(upload_root, 'attachments')
 
 display_date_fmt = '%Y-%m-%d %H:%M:%S'
 filesafe_timestamp = '%Y%m%d-%H%M%S'

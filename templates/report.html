@@ -10,11 +10,11 @@
     integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
     crossorigin=""></script>
 
-{% set title = '({{ report.spill_id}} ) Report - CCG/DFO Spill Tracker' %}
+{% set title = '({{ report.report_num}} ) Report - CCG/DFO Spill Tracker' %}
 
 {# <script type="text/javascript" src="/static/map_init.js"></script> #}
 
-<main id="report{{ report.spill_id}}" role="main">
+<main id="report{{ report.report_num}}" role="main">
 
 <h2>Pollution Report ({{ report.report_num }})</h2>
 
@@ -26,7 +26,7 @@
         <p>Report #: {{ report.report_num }}</p>
         <p>Report Name: {{ report.report_name }}</p>
         <p>Update Text: {{ report.update_text }}</p>
-        <p>Recorded By: {{ report.recorded_by }}</p>
+        <p>Updated By: {{ report.recorded_by }}</p>
         {# Timezone: #}
         <p>Report Date: {{ report.report_date_ccg }} {{ report.report_tz_ccg }}</p>
         <p>Spill Date: {{ report.spill_date_ccg }} {{ report.spill_tz_ccg }}</p>
@@ -58,7 +58,7 @@
         <p>Colour and odour: {{ report.colour_odour }}</p>
         <p>Origin: {{ report.origin }}</p>
         <p>Weather: {{ report.weather }}</p>
-        <p>Additional Info: {{ report.sitation_additional_info }}</p>
+        <p>Additional Info: {{ report.situation_info }}</p>
         <p>Response Activated: {{ report.response_activated }}</p>
         <hr>
         <h5>Vessel information:</h5>
@@ -97,7 +97,7 @@
         <p>Click on any of the timestamps below to see the state of this report at that time.</p>
         {% for ts in timestamps %}
             <p>
-            <a href="{{ url_for('report.show_report', spill_id=report.spill_id, timestamp=ts.ts_url) }}">
+            <a href="{{ url_for('report.show_report', report_num=report.report_num, timestamp=ts.ts_url) }}">
                 {{ ts.ts_ccg_format }}
             </a>
             </p>
@@ -106,14 +106,14 @@
         <h5>Update this report</h5>
         <p>Click the button below to make changes to this report.</p>
         <div id="reportUpdateBtn">
-            <a class="btn btn-primary" role="button" href="{{ url_for('report.update_report', spill_id=report.spill_id) }}">Update Report</a>
+            <a class="btn btn-primary" role="button" href="{{ url_for('report.update_report', report_num=report.report_num) }}">Update Report</a>
         </div>
 
         <h5 class="mt-3">Download report data</h5>
         <p>Click the button below to download this report as an Excel spreadsheet.</p>
         <div class="ml-auto mb-3">  
             <a class="btn btn-warning" 
-                href="{{ url_for('report.export_excel', spill_id=report.spill_id, timestamp=report.last_updated_ts) }}">Export to Excel</a>
+                href="{{ url_for('report.export_excel', report_num=report.report_num, timestamp=report.last_updated_ts) }}">Export to Excel</a>
         </div>
     </div>
 </div>

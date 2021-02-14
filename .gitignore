@@ -2,8 +2,10 @@
 **/__working__
 .vscode
 __pycache__
-static/attachments/*
-!static/attachments/__init__.py
+uploads/*
+!uploads/.gitkeep
+uploads/attachments/*
+!uploads/attachments/.gitkeep
 templates/reports_*.xlsx
 templates/report_*.xlsx
 .env

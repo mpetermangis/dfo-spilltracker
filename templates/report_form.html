@@ -28,13 +28,16 @@
     <input class="spilldata" type="hidden" id="spill_id" name="spill_id" 
         value="{% if action == 'Update' %} {{ report.spill_id}} {% endif %}">
 
+    {# Only show the Report Number field for updates, not when creating a NEW report. #}
+    {% if action == 'Update' %}
     <div class="form-group">
         <label for="report_num">Report # </label>
         <input type="text" class="form-control spilldata" id="report_num" name="report_num" 
             aria-describedby="reportNumHelp" pattern="[0-9]{4}-[0-9]{4}"
-            placeholder="YYYY-0000" value="{{ report.report_num }}" required>
-            <small id="reportNumHelp" class="form-text text-muted">YEAR-REPORT_NUMBER (4 digits) - e.g. 2020-0132</small>
+            value="{{ report.report_num }}" readonly>
+            <small id="reportNumHelp" class="form-text text-muted">Report number is auto-generated as YEAR-REPORT_NUMBER, e.g. 2021-132</small>
     </div>
+    {% endif %}
 
     <div class="form-group">
         <label for="report_name">Report Name</label>
@@ -242,9 +245,9 @@
     </div>
 
     <div class="form-group">
-        <label for="sitation_additional_info">Additional Information</label>
-        <textarea rows="5" class="form-control spilldata" id="sitation_additional_info" 
-            name="sitation_additional_info">{{ report.sitation_additional_info }}</textarea>
+        <label for="situation_info">Additional Information</label>
+        <textarea rows="5" class="form-control spilldata" id="situation_info" 
+            name="situation_info">{{ report.situation_info }}</textarea>
     </div>
 
     <div class="form-group">

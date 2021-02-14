@@ -6,16 +6,19 @@ from wtforms import StringField
 #     , SubmitField, ValidationError, validators
 from flask_cors import CORS
 from flask_mail import Mail
-from werkzeug.utils import secure_filename
+# from werkzeug.utils import secure_filename
 import atexit
 import settings
-import lookups
-import reports_db as db
+# import lookups
+# import reports_db as db
 import os
 import socket
 from geo import coord_converter
-import excel_export
-from reports_server import rep
+# import user_db
+# user_db.create_user_db()
+
+
+
 
 # Flask login / security modules
 from flask_sqlalchemy import SQLAlchemy
@@ -23,18 +26,20 @@ from flask_security import Security, SQLAlchemyUserDatastore, \
     UserMixin, RoleMixin, login_required
 
 logger = settings.setup_logger(__name__)
-port=5000
+port = 5000
 
 # app = Flask(__name__, static_folder="attachments")
 app = Flask(__name__)
 CORS(app)
+
+
 
 # Disable debug mode on prod
 # if socket.gethostname() == 'spilltracker':
 if settings.PROD_SERVER:
     app.config["DEBUG"] = False
 
-app.config['UPLOAD_FOLDER'] = 'static/attachments'
+app.config['UPLOAD_FOLDER'] = settings.attachments
 # Disable caching on downloaded files
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
@@ -103,37 +108,31 @@ class User(userdb.Model, UserMixin):
     roles = userdb.relationship('Role', secondary=roles_users,
                                 backref=userdb.backref('users', lazy='dynamic'))
 
+userdb.create_all()
+
+
+# def get_username(id):
+#     session = userdb.Session()
 
 # Use a custom registration form
 class ExtendedRegisterForm(RegisterForm):
     staff_name = StringField('Full Name', [Required()])
-    # last_name = StringField('Last Name', [Required()])
 
 
 # Initialize the SQLAlchemy data store and Flask-Security.
+# user_datastore = SQLAlchemyUserDatastore(user_tables.userdb, user_tables.User, user_tables.Role)
 user_datastore = SQLAlchemyUserDatastore(userdb, User, Role)
 security = Security(app, user_datastore,
          register_form=ExtendedRegisterForm)
 
 
-# Register blueprints for various endpoints
-app.register_blueprint(rep)
-
-
-
-def get_current_user():
-    """
-    Gets and prints the current user id, email
-    :return: user object
-    """
-    logger.info('User: %s (id %s)' % (current_user.email, current_user.id))
-    return current_user
-
-
 # Executes before the first request is processed.
 @app.before_first_request
 def before_first_request():
-    # Create any database tables that don't exist yet.
+    # Create any user/role database tables that don't exist yet.
+    # No, this is done in user_db
+    # pass
+    # user_tables.userdb.create_all()
     userdb.create_all()
 
     # Create the Roles, unless they already exist
@@ -141,7 +140,14 @@ def before_first_request():
     user_datastore.find_or_create_role(name='user', description='CCG User')
     user_datastore.find_or_create_role(name='observer', description='Observer with read-only access')
 
+    # user_tables.userdb.session.commit()
     userdb.session.commit()
+
+
+# Register blueprints for Reports endpoint, only after creating user tables
+from reports_server import rep
+import excel_export
+app.register_blueprint(rep)
 
 
 @app.route('/bb', methods=['GET'])
@@ -154,9 +160,10 @@ def bb():
 def index():
     # Users must be authenticated to view the home page, but they don't have to have any particular role.
     # Flask-Security will display a login form if the user isn't already authenticated.
-    user = get_current_user()
+    # user = get_current_user()
+    logger.info('Homepage loaded by: %s (id %s)' % (current_user.email, current_user.id))
     return render_template('index.html',
-                           user=user)
+                           user=current_user)
 
 
 @app.route('/latlon_to_coords', methods=['POST'])
@@ -206,7 +213,8 @@ def main():
     atexit.register(stop_app)
 
     app.run(
-        host="0.0.0.0",
+        # host="0.0.0.0",
+        host="localhost",
         port=port,
         ssl_context='adhoc',
         debug=True

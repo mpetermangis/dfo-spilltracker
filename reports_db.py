@@ -1,11 +1,12 @@
 
 import settings
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from sqlalchemy import func, create_engine, Column, Integer, String, Text, DateTime, Float, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError, ProgrammingError
+from sqlalchemy.schema import Sequence, CreateSequence
 import psycopg2
 import traceback
 from geo import coord_converter
@@ -35,9 +36,20 @@ class SpillReport(Base):
                      nullable=False)
     recorded_by = Column(Text,
                        nullable=False)
+    user_id = Column(Integer,
+                     # ForeignKey("user.id"),
+                     nullable=False)
+    """
+    ForeignKey doesn't work:
+    sqlalchemy.exc.NoReferencedTableError: Foreign key associated with column 'spill_reports.user_id' 
+    could not find table 'user' with which to generate a foreign key to target column 'id'
+    user_id = Column(Integer, ForeignKey("user.id"),
+                     nullable=False)
+    """
 
     # General info
-    report_num = Column(Text)
+    # report_num must be unique, since it is used as a foreign key
+    report_num = Column(Text, nullable=False, unique=True)
     report_name = Column(Text)
     update_text = Column(Text)
     report_date = Column(DateTime)
@@ -64,7 +76,7 @@ class SpillReport(Base):
     colour_odour = Column(Text)
     origin = Column(Text)
     weather = Column(Text)
-    sitation_additional_info = Column(Text)
+    situation_info = Column(Text)
     # Pictures/Attachments: are in a separate table
     response_activated = Column(Text)
 
@@ -84,6 +96,12 @@ class SpillReport(Base):
     dfo_public_affairs = Column(Text)
     roc_officer = Column(Text)
 
+    # Additional fields added Feb 2021
+    er_region = Column(Text)
+    fleet_tasking = Column(Text)
+    station_or_ship = Column(Text)
+    unit = Column(Text)
+
 
 class AttachedFile(Base):
 
@@ -92,14 +110,40 @@ class AttachedFile(Base):
     id = Column(Integer,
                 primary_key=True,
                 nullable=False)
+    report_num = Column(Text, ForeignKey('spill_reports.report_num'))
     # spill_id = Column(Integer, ForeignKey('spill_reports.spill_id'))
-    spill_id = Column(Integer, nullable=False)
+    # spill_id = Column(Integer, nullable=False)
     filename = Column(Text, nullable=False)
     type = Column(Text, nullable=False)
 
 
 # Create tables
 Base.metadata.create_all(engine)
+
+
+# TODO add spill_id_seq
+# Create polrep and spill_id sequences
+polrep_seq = Sequence('polrep_num')
+spill_id_seq = Sequence('spill_id_seq')
+try:
+    engine.execute(CreateSequence(polrep_seq))
+    engine.execute(CreateSequence(spill_id_seq))
+except ProgrammingError:
+    # Sequence already exists, ignore
+    logger.warning('Sequence "polrep_num" and/or "spill_id_seq" exists.')
+    pass
+
+
+def get_next_polrep_num():
+    """
+    Get the next polrep num in the DB sequence.
+    :return:
+    """
+    next_polrep_num = engine.execute(polrep_seq)
+    year = date.today().year
+    next_polrep_num = '%s-%s' % (year, next_polrep_num)
+    logger.info('Next POLREP number: %s' % next_polrep_num)
+    return next_polrep_num
 
 
 def result_to_dict(res):
@@ -150,8 +194,7 @@ def format_timestamps(data):
 def list_all_reports():
     """
     Retrieve a summary of all reports.
-    (subset of fields for a display snippet) >> NO, get all fields and
-    render only the ones we want to display in the *template*
+    Get all fields here and render only the ones we want to display in the *template*
     Get only the latest version of each report.
     Order by last_updated, desc
     :return:
@@ -162,16 +205,16 @@ def list_all_reports():
     reports_all = {}
     for res in results:
         report = result_to_dict(res)
-        # Check if this spill id is already in dict
-        spill_id = report.get('spill_id')
-        if spill_id not in reports_all:
-            reports_all[spill_id] = report
+        # Check if this report_num is already in dict
+        report_num = report.get('report_num')
+        if report_num not in reports_all:
+            reports_all[report_num] = report
         else:
             # Retrieve existing, compare last updated date, keep newest
-            temp_report = reports_all.get(spill_id)
+            temp_report = reports_all.get(report_num)
             if report.get('last_updated') > temp_report.get('last_updated'):
                 # This version is newer, replace
-                reports_all[spill_id] = report
+                reports_all[report_num] = report
     reports_list = list(reports_all.values())
     reports_list = sorted(reports_list, key=lambda i: i['last_updated'], reverse=True)
     return reports_list
@@ -193,10 +236,10 @@ def reports_by_date(results, reverse=False):
     return report_data
 
 
-def get_report(spill_id, ts_url=None):
+def get_report(report_num, ts_url=None):
     """
     Retrieve a spill report at a given timestamp
-    :param spill_id:
+    :param report_num:
     :param ts_url: a timestamp in URL-safe format
     :return: spill report as a Python dict
     """
@@ -204,7 +247,7 @@ def get_report(spill_id, ts_url=None):
     if not ts_url:
         # Get the last (most recent version) of this report
         result = session.query(SpillReport).filter(
-            SpillReport.spill_id==spill_id).order_by(
+            SpillReport.report_num==report_num).order_by(
             SpillReport.last_updated.desc()).first()
 
     else:
@@ -212,14 +255,14 @@ def get_report(spill_id, ts_url=None):
         # Convert ts_url to a timestamp object
         timestamp = datetime.strptime(ts_url, settings.filesafe_timestamp)
         result = session.query(SpillReport).filter(
-            SpillReport.spill_id == spill_id,
+            SpillReport.report_num == report_num,
             SpillReport.last_updated == timestamp).first()
 
     session.close()
 
     """
     Most efficient setup is:
-    - the latest timestamp for each spill_id should contain the complete representation 
+    - the latest timestamp for each report_num should contain the complete representation 
     of the latest spill report. This means that retrieval of any latest spill report is O(1). 
     - in fact, getting any version of any report will be O(1)
     - Whenever a spill report is updated, we simply add a new record with all of the form data 
@@ -233,22 +276,22 @@ def get_report(spill_id, ts_url=None):
     return final_report
 
 
-def get_report_for_display(spill_id, ts_url=None):
+def get_report_for_display(report_num, ts_url=None):
     """
     Retrieve a spill report and format it for display in an HTML template
-    :param spill_id:
+    :param report_num:
     :param ts_url:
     :return:
     """
 
-    final_report = get_report(spill_id, ts_url)
+    final_report = get_report(report_num, ts_url)
 
     # Convert None to empty string for display
     display_report = null_to_empty_string(final_report)
     display_report = format_timestamps(display_report)
 
     # Add attachments
-    attachments = get_attachments(spill_id)
+    attachments = get_attachments(report_num)
     display_report['attachments'] = attachments
 
     # Add coordinate regex and placeholder
@@ -273,16 +316,16 @@ def get_report_for_display(spill_id, ts_url=None):
     return display_report
 
 
-def get_timestamps(spill_id):
+def get_timestamps(report_num):
     """
     Retrieve a list of timestamps for a given spill report
-    :param spill_id:
+    :param report_num:
     :return:
     """
     session = Session()
     timestamps = []
     # Return a copy in human-readable form, another in URL-safe form
-    for result in session.query(SpillReport.last_updated).filter(SpillReport.spill_id == spill_id):
+    for result in session.query(SpillReport.last_updated).filter(SpillReport.report_num == report_num):
         timestamp = result[0]
         ts_url = timestamp.strftime(settings.filesafe_timestamp)
         ts_display = timestamp.strftime(settings.display_date_fmt)
@@ -308,17 +351,17 @@ def current_time_nearest_sec():
     return now
 
 
-def get_attachments(spill_id):
+def get_attachments(report_num):
     session = Session()
-    # Get all attachments for this spill_id
+    # Get all attachments for this report_num
     attachments = []
     results = session.query(AttachedFile).filter(
-        AttachedFile.spill_id == spill_id).all()
+        AttachedFile.report_num == report_num).all()
     for res in results:
         res_dict = result_to_dict(res)
         type = res_dict.get('type')
-        file_path = 'attachments/%s/%s' % (
-                res_dict.get('spill_id'), res_dict.get('filename'))
+        file_path = 'uploads/%s/%s' % (
+                res_dict.get('report_num'), res_dict.get('filename'))
         res_dict['url_path'] = file_path
         if type in settings.IMAGE_FORMATS:
             res_dict['icon_path'] = file_path
@@ -329,19 +372,30 @@ def get_attachments(spill_id):
     return attachments
 
 
-def attachments_to_db(spill_id, attachments):
-    # Create folder for spill event
-    upload_root = os.path.join(settings.base_dir, 'static', 'attachments')
-    spill_folder = os.path.join(upload_root, str(spill_id))
-    os.makedirs(spill_folder, exist_ok=True)
+def get_file_extension(filename):
+    try:
+        extension = os.path.splitext(filename)[1][1:].strip().lower()
+        return extension
+    except:
+        logger.error(traceback.format_exc())
+        return ''
+
+
+def attachments_to_db(spill_id, report_num, attachments):
+    # Create folder for report number
+    # upload_root = os.path.join(settings.base_dir, 'static', 'attachments')
+    report_folder = os.path.join(settings.upload_root, report_num)
+    os.makedirs(report_folder, exist_ok=True)
     attach_list = []
     for filename in attachments:
-        try:
-            extension = os.path.splitext(filename)[1][1:].strip().lower()
-        except:
-            logger.error(traceback.format_exc())
-            continue
-        attach_data = {'spill_id': spill_id,
+        # Move all attachments to the report folder. NO, DO THIS LATER.
+        # filebase = os.path.basename(filename)
+        # new_filename = os.path.join(report_folder, filebase)
+        # logger.info('Moving file: %s > %s' % (filename, new_filename))
+        # os.rename(filename, new_filename)
+        extension = get_file_extension(filename)
+
+        attach_data = {'report_num': report_num,
                        'filename': filename,
                        'type': extension}
         attach_list.append(attach_data)
@@ -354,8 +408,8 @@ def attachments_to_db(spill_id, attachments):
         session.commit()
         # If ok, move files here
         for filename in attachments:
-            src = os.path.join(upload_root, filename)
-            dst = os.path.join(spill_folder, filename)
+            src = os.path.join(settings.attachments, filename)
+            dst = os.path.join(report_folder, filename)
             os.rename(src, dst)
     except (SQLAlchemyError, TypeError):
         logger.error(traceback.format_exc())
@@ -366,7 +420,7 @@ def attachments_to_db(spill_id, attachments):
 def save_report_data(report_data):
     """
     Saves a new report, or incremental update of an existing report.
-    If there is no spill_id, this is a completely NEW report.
+    If there is no spill_id/report_num, this is a completely NEW report.
     In either case, we simply save all the data as-is.
     :param report_data:
     :return:
@@ -407,11 +461,26 @@ def save_report_data(report_data):
     report_data.pop('attachments', None)
 
     # TODO: add real users
-    report_data['recorded_by'] = 'Default user'
+    # report_data['recorded_by'] = 'Default user'
+    # report_data['user_id'] = user_id
 
     # Round off times to nearest second
     now = current_time_nearest_sec()
     report_data['last_updated'] = now
+
+    """
+    Auto-generate a polrep number when a new polrep is saved. 
+    CREATE SEQUENCE polrepnum START 1;
+    SELECT nextval('polrepnum');
+    ALTER SEQUENCE polrepnum RESTART WITH 1;
+    """
+    report_num = report_data.get('report_num')
+    if not report_num:
+        # This is a New report
+        logger.info('Saving a NEW report')
+        report_num = get_next_polrep_num()
+        report_data['report_num'] = report_num
+
     spill_id = report_data.get('spill_id')
     if not spill_id:
         # This is a NEW spill event, increment the next spill ID
@@ -440,8 +509,8 @@ def save_report_data(report_data):
 
     # Handle attachments
     if attachments:
-        attachments_to_db(spill_id, attachments)
-    return spill_id, success, 'OK'
+        attachments_to_db(spill_id, report_num, attachments)
+    return spill_id, report_num, success, 'OK'
 
 
 def main():
