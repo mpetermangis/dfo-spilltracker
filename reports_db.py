@@ -12,6 +12,9 @@ import traceback
 from geo import coord_converter
 import lookups
 
+import flask_whooshalchemy
+from whoosh.analysis import StemmingAnalyzer
+
 engine = create_engine(settings.SPILL_TRACKER_DB_URL)
 
 Base = declarative_base()
@@ -25,6 +28,8 @@ logger = settings.setup_logger('reports_db')
 class SpillReport(Base):
 
     __tablename__ = "spill_reports"
+    __searchable__ = ['report_num', 'report_name', 'update_text']
+    __analyzer__ = StemmingAnalyzer()
 
     # Internal fields, not necessarily part of Spill Report schema
     id = Column(Integer,
@@ -34,11 +39,8 @@ class SpillReport(Base):
                           nullable=False)
     spill_id = Column(Integer,
                      nullable=False)
-    recorded_by = Column(Text,
-                       nullable=False)
-    user_id = Column(Integer,
-                     # ForeignKey("user.id"),
-                     nullable=False)
+    recorded_by = Column(Text)
+    user_id = Column(Integer, nullable=False)
     """
     ForeignKey doesn't work:
     sqlalchemy.exc.NoReferencedTableError: Foreign key associated with column 'spill_reports.user_id' 
@@ -47,9 +49,10 @@ class SpillReport(Base):
                      nullable=False)
     """
 
-    # General info
-    # report_num must be unique, since it is used as a foreign key
-    report_num = Column(Text, nullable=False, unique=True)
+    # report_num CANNOT be unique, since we have multiple versions of
+    # the same report number with different timestamps.
+    # This means it cannot used as a foreign key.
+    report_num = Column(Text, nullable=False)
     report_name = Column(Text)
     update_text = Column(Text)
     report_date = Column(DateTime)
@@ -97,6 +100,7 @@ class SpillReport(Base):
     roc_officer = Column(Text)
 
     # Additional fields added Feb 2021
+    # TODO: update report form, add these fields
     er_region = Column(Text)
     fleet_tasking = Column(Text)
     station_or_ship = Column(Text)
@@ -110,7 +114,9 @@ class AttachedFile(Base):
     id = Column(Integer,
                 primary_key=True,
                 nullable=False)
-    report_num = Column(Text, ForeignKey('spill_reports.report_num'))
+    # Cannot use report_num as a foreign key because not unique.
+    # report_num = Column(Text, ForeignKey('spill_reports.report_num'))
+    report_num = Column(Text, nullable=False)
     # spill_id = Column(Integer, ForeignKey('spill_reports.spill_id'))
     # spill_id = Column(Integer, nullable=False)
     filename = Column(Text, nullable=False)
@@ -132,6 +138,13 @@ except ProgrammingError:
     # Sequence already exists, ignore
     logger.warning('Sequence "polrep_num" and/or "spill_id_seq" exists.')
     pass
+
+# TODO; Update sequence on Jan 1
+# Use the ALTER SEQUENCE command to modify PostgreSQL sequences.
+# There is no built-in SQLAlchemy function for this, use session.execute to execute the SQL.
+# https://stackoverflow.com/a/36248764
+# db.session.execute("ALTER SEQUENCE test_id_seq RESTART WITH 1")
+# db.session.commit()
 
 
 def get_next_polrep_num():
