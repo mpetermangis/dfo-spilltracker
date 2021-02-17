@@ -10,6 +10,12 @@ import email.utils
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
+# For rendering HTML templates
+import jinja2
+templateLoader = jinja2.FileSystemLoader(searchpath='./templates')
+env = jinja2.Environment(loader=templateLoader)
+email_template = env.get_template('report_email.html')
+
 logger = settings.setup_logger(__name__)
 
 # Replace sender@example.com with your "From" address.
@@ -20,7 +26,8 @@ SENDERNAME = 'Notification Service - marinepollution.ca'
 
 # Replace recipient@example.com with a "To" address. If your account
 # is still in the sandbox, this address must be verified.
-RECIPIENTS = ['mpetermangis@gmail.com', 'Nicholas.Benoy@dfo-mpo.gc.ca']
+# RECIPIENTS = ['mpetermangis@gmail.com', 'Nicholas.Benoy@dfo-mpo.gc.ca']
+RECIPIENTS = ['mpetermangis@gmail.com']
 
 # Replace smtp_username with your Amazon SES SMTP user name.
 USERNAME_SMTP = settings.smtp_user
@@ -43,48 +50,49 @@ PASSWORD_SMTP = settings.smtp_pass
 # The STMP server is defined in: settings.smtp_server
 # The STMP PORT is defined in: settings.smtp_port
 
-# The subject line of the email.
-SUBJECT = 'Updated Spill Report - { Report Title }'
 
-# The email body for recipients with non-HTML email clients.
-BODY_TEXT = ("Amazon SES Test\r\n"
-             "This email was sent through the Amazon SES SMTP "
-             "Interface using the Python smtplib package."
-            )
+def notify_report_update(report_num, report_name):
+    # The subject line of the email.
+    SUBJECT = 'Updated Spill Report - %s (%s)' % (report_name, report_num)
 
-# The HTML body of the email.
-BODY_HTML = """<html>
-<head></head>
-<body>
-  <h1>Amazon SES SMTP Email Test</h1>
-  <p>This email was sent with Amazon SES using the
-    <a href='https://www.python.org/'>Python</a>
-    <a href='https://docs.python.org/3/library/smtplib.html'>
-    smtplib</a> library.</p>
-</body>
-</html>
-            """
+    # The email body for recipients with non-HTML email clients.
+    BODY_TEXT = """
+    Pollution Report Update - %s
+  
+    The following pollution report was updated:
+    %s, %s
 
-# Create message container - the correct MIME type is multipart/alternative.
-msg = MIMEMultipart('alternative')
-msg['Subject'] = SUBJECT
-msg['From'] = email.utils.formataddr((SENDERNAME, SENDER))
-msg['To'] = ', '.join(RECIPIENTS)
-# Comment or delete the next line if you are not using a configuration set
-# msg.add_header('X-SES-CONFIGURATION-SET',CONFIGURATION_SET)
+    For details, please see the report page: 
+    https://marinepollution.ca/report/%s
+  
+    This notification was automatically sent from the DFO/CCG Spill Tracker at https://marinepollution.ca. Do not reply to this message. 
+    """ % (report_num, report_name, report_num, report_num)
 
-# Record the MIME types of both parts - text/plain and text/html.
-part1 = MIMEText(BODY_TEXT, 'plain')
-part2 = MIMEText(BODY_HTML, 'html')
+    # The HTML body of the email.
+    BODY_HTML = email_template.render(report_title=report_name, report_num=report_num)
 
-# Attach parts into message container.
-# According to RFC 2046, the last part of a multipart message, in this case
-# the HTML message, is best and preferred.
-msg.attach(part1)
-msg.attach(part2)
+    # Create message container - the correct MIME type is multipart/alternative.
+    msg = MIMEMultipart('alternative')
+    msg['Subject'] = SUBJECT
+    msg['From'] = email.utils.formataddr((SENDERNAME, SENDER))
+    msg['To'] = ', '.join(RECIPIENTS)
+    # Comment or delete the next line if you are not using a configuration set
+    # msg.add_header('X-SES-CONFIGURATION-SET',CONFIGURATION_SET)
+
+    # Record the MIME types of both parts - text/plain and text/html.
+    part1 = MIMEText(BODY_TEXT, 'plain')
+    part2 = MIMEText(BODY_HTML, 'html')
+
+    # Attach parts into message container.
+    # According to RFC 2046, the last part of a multipart message, in this case
+    # the HTML message, is best and preferred.
+    msg.attach(part1)
+    msg.attach(part2)
+
+    send_message(msg)
 
 
-def main():
+def send_message(msg):
     # Try to send the message.
     try:
         logger.info('Connecting to SMTP server...')
@@ -102,6 +110,10 @@ def main():
         logger.error("Error: ", e)
     else:
         logger.info("Email sent!")
+
+
+def main():
+    notify_report_update(123, 'title')
 
 
 if __name__ == '__main__':

@@ -9,6 +9,7 @@ import traceback
 import excel_export
 import lookups
 import reports_db as db
+import notifications
 
 logger = settings.setup_logger(__name__)
 
@@ -121,6 +122,9 @@ def save_report_data():
     spill_id, report_num, success, status = db.save_report_data(data)
     if success:
         logger.info('Saved OK, redirect to show_report: %s' % report_num)
+        # Send notification email here
+        report_name = data.get('report_name')
+        notifications.notify_report_update(report_num, report_name)
         return redirect(url_for('report.show_report', report_num=report_num))
     else:
         resp = jsonify(success=False, msg=status)
