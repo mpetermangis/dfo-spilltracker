@@ -1,3 +1,5 @@
+# TODO: better structure for the app https://stackoverflow.com/a/64680953
+
 from flask import Flask, flash, request, jsonify, send_file, render_template, redirect, url_for, session
 from flask_login import current_user
 from flask_security.forms import RegisterForm, Required
@@ -18,8 +20,6 @@ from geo import coord_converter
 # user_db.create_user_db()
 
 
-
-
 # Flask login / security modules
 from flask_sqlalchemy import SQLAlchemy
 from flask_security import Security, SQLAlchemyUserDatastore, \
@@ -31,7 +31,6 @@ port = 5000
 # app = Flask(__name__, static_folder="attachments")
 app = Flask(__name__)
 CORS(app)
-
 
 
 # Disable debug mode on prod
@@ -57,6 +56,7 @@ app.config['SECURITY_REGISTERABLE'] = True
 # Use cryptic URL to prevent spam registration
 app.config['SECURITY_REGISTER_URL'] = '/TuychXJzpBhv2mmZcGt8bQ'
 app.config['SECURITY_CHANGEABLE'] = True
+
 # We're using PBKDF2 with salt.
 app.config['SECURITY_PASSWORD_HASH'] = 'pbkdf2_sha512'
 app.config['SECURITY_PASSWORD_SALT'] = settings.db_salt
@@ -65,7 +65,7 @@ app.config['SECURITY_SEND_REGISTER_EMAIL'] = True
 
 # Disable caching on downloaded files
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
-# Disable track modifications, see https://github.com/pallets/flask-sqlalchemy/issues/365
+# Disable track modifications: https://github.com/pallets/flask-sqlalchemy/issues/365
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Flask-Security optionally sends email notification to users upon registration, password reset, etc.
@@ -73,16 +73,21 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # Set mail-related config values.
 app.config['SECURITY_RECOVERABLE'] = True
 app.config['SECURITY_EMAIL_SENDER'] = 'no-reply@marinepollution.ca'
-# Replace the next five lines with your own SMTP server settings
+
+# SSL disabled, use TLS instead to prevent this error:
+# ssl.SSLError: [SSL: WRONG_VERSION_NUMBER] wrong version number (_ssl.c:1123)
+# https://stackoverflow.com/a/66290550
+# app.config['MAIL_USE_SSL'] = True
+app.config['MAIL_USE_TLS'] = True
+
+# Use my own SMTP server settings here
 app.config['MAIL_SERVER'] = settings.smtp_server
 app.config['MAIL_PORT'] = settings.smtp_port
-app.config['MAIL_USE_SSL'] = True
 app.config['MAIL_USERNAME'] = settings.smtp_user
 app.config['MAIL_PASSWORD'] = settings.smtp_pass
 
 
-# Setup user DB and flask-security
-# Initialize Flask-Mail and SQLAlchemy
+# Add SQLAlchemy and Flask-Mail to the Flask app
 mail = Mail(app)
 userdb = SQLAlchemy(app)
 
@@ -108,22 +113,22 @@ class User(userdb.Model, UserMixin):
     roles = userdb.relationship('Role', secondary=roles_users,
                                 backref=userdb.backref('users', lazy='dynamic'))
 
-userdb.create_all()
 
-
-# def get_username(id):
-#     session = userdb.Session()
-
-# Use a custom registration form
+# Use a custom registration form for new users
+# If we use a custom registration form, security confirmable MUST be turned off:
+# https://stackoverflow.com/a/56155594
+# https://github.com/mattupstate/flask-security/issues/54
+app.config['SECURITY_CONFIRMABLE'] = False
 class ExtendedRegisterForm(RegisterForm):
     staff_name = StringField('Full Name', [Required()])
 
-
-# Initialize the SQLAlchemy data store and Flask-Security.
-# user_datastore = SQLAlchemyUserDatastore(user_tables.userdb, user_tables.User, user_tables.Role)
+# Initialize SQLAlchemy and Flask-Security datastore.
 user_datastore = SQLAlchemyUserDatastore(userdb, User, Role)
 security = Security(app, user_datastore,
          register_form=ExtendedRegisterForm)
+
+# Create DB tables with the SQLAlchemyUserDatastore config as defined above
+userdb.create_all()
 
 
 # Executes before the first request is processed.
@@ -142,6 +147,12 @@ def before_first_request():
 
     # user_tables.userdb.session.commit()
     userdb.session.commit()
+
+
+# Always add current user to templates
+@app.context_processor
+def inject_user():
+    return dict(user=current_user)
 
 
 # Register blueprints for Reports endpoint, only after creating user tables

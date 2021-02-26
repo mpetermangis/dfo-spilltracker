@@ -29,7 +29,6 @@ def load_data(year, path):
         #     print(cell.value)
 
 
-
 def main():
     legacy = os.path.join(settings.upload_root, '2021-02-11_Legacy_Polreps.xlsx')
     # open_legacy_file(legacy)

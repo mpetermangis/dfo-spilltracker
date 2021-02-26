@@ -1,25 +1,15 @@
-{% extends "_base.html" %}
+{% extends "security/base.html" %}
 {% from "security/_macros.html" import render_field_with_errors, render_field %}
 
 {% block content %}
 {% include "security/_messages.html" %}
-<main id="loginManage" role="main">
-  <div class="container">
-    <div class="content">
-      <h3>{{ _('Login') }}</h3>
-      <form action="{{ url_for_security('login') }}" method="POST" name="login_user_form">
-        {{ login_user_form.hidden_tag() }}
-        {{ render_field_with_errors(login_user_form.email) }}
-        {{ render_field_with_errors(login_user_form.password) }}
-        {{ render_field_with_errors(login_user_form.remember) }}
-        {{ render_field(login_user_form.submit) }}
-      </form>
-      {# Disabled to prevent spam registration  {% include "security/_menu.html" %}  #}
-      <div>
-        <a href="{{ url_for_security('forgot_password') }}">Reset Password</a>
-      </div>
-      
-    </div>
-  </div>
-</main>
+<h1>{{ _('Login') }}</h1>
+<form action="{{ url_for_security('login') }}" method="POST" name="login_user_form">
+    {{ login_user_form.hidden_tag() }}
+    {{ render_field_with_errors(login_user_form.email) }}
+    {{ render_field_with_errors(login_user_form.password) }}
+    {{ render_field_with_errors(login_user_form.remember) }}
+    {{ render_field(login_user_form.submit) }}
+</form>
+{% include "security/_menu.html" %}
 {% endblock %}

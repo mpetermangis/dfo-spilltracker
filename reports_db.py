@@ -12,6 +12,8 @@ import traceback
 from geo import coord_converter
 import lookups
 
+# from spilltracker_rest import User
+
 import flask_whooshalchemy
 from whoosh.analysis import StemmingAnalyzer
 
@@ -298,6 +300,14 @@ def get_report_for_display(report_num, ts_url=None):
     """
 
     final_report = get_report(report_num, ts_url)
+    session = Session()
+    # Get user's full name from user_id
+    user = session.query(User).filter(User.id == final_report.get('user_id')).first()
+    if user:
+        final_report['recorded_by'] = user.staff_name
+    else:
+        final_report['recorded_by'] = 'Unknown User'
+    session.close()
 
     # Convert None to empty string for display
     display_report = null_to_empty_string(final_report)
