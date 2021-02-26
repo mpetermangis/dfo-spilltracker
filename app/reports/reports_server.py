@@ -5,6 +5,7 @@ import os
 
 from app.reports import excel_export
 from app.reports import reports_db as db
+from app.reports.reports_db import SpillReport
 from app import settings
 from app.utils import notifications, lookups
 
@@ -37,6 +38,15 @@ def reports_all():
     reports_list = db.list_all_reports()
     return render_template('reports_list.html',
                            reports_list=reports_list)
+
+
+@rep.route('/search/<query_text>', methods=['GET'])
+def report_search(query_text):
+    # session = db.Session()
+    # q = session.query(SpillReport)
+    # results = q.search(query_text).all()
+    results = SpillReport.query.search(query_text, limit=10)
+    print(results)
 
 
 @rep.route('/export/<report_num>/<timestamp>', methods=['GET'])

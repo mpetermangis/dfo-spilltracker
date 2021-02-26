@@ -13,19 +13,18 @@ from app.utils import lookups
 from app.geodata import coord_converter
 from app.user import User
 
-from app.database import db
-# from app.database import db.Column, Integer 
-
 import flask_sqlalchemy
 import flask_whooshalchemy
 
 from whoosh.analysis import StemmingAnalyzer
 
+from app.database import db
+
 engine = create_engine(settings.SPILL_TRACKER_DB_URL)
-# 
-# Base = declarative_base()
-# Session = sessionmaker()
-# Session.configure(bind=engine)
+
+Base = declarative_base()
+Session = sessionmaker()
+Session.configure(bind=engine)
 
 logger = settings.setup_logger('reports_db')
 
@@ -42,7 +41,7 @@ ORDER BY report_num, last_updated DESC;
 
 
 # Define database schema
-class SpillReport(db.Model):
+class SpillReport(Base):
 
     __tablename__ = "spill_reports"
     __searchable__ = ['report_num', 'report_name', 'update_text']
@@ -128,7 +127,7 @@ class SpillReport(db.Model):
         return '%s (%s)' % (self.report_name, self.report_num)
 
 
-class AttachedFile(db.Model):
+class AttachedFile(Base):
 
     __tablename__ = "attachments"
 
@@ -145,19 +144,19 @@ class AttachedFile(db.Model):
 
 
 # Create tables
-# Base.metadata.create_all(engine)
+Base.metadata.create_all(engine)
 
 
 # Create polrep sequence
 polrep_seq = Sequence('polrep_num')
 # spill_id_seq = Sequence('spill_id_seq')
-# try:
-#     engine.execute(CreateSequence(polrep_seq))
-#     # engine.execute(CreateSequence(spill_id_seq))
-# except ProgrammingError:
-#     # Sequence already exists, ignore
-#     logger.warning('Sequence "polrep_num" exists.')
-#     pass
+try:
+    engine.execute(CreateSequence(polrep_seq))
+    # engine.execute(CreateSequence(spill_id_seq))
+except ProgrammingError:
+    # Sequence already exists, ignore
+    logger.warning('Sequence "polrep_num" exists.')
+    pass
 
 # TODO; Update sequence on Jan 1
 # Use the ALTER SEQUENCE command to modify PostgreSQL sequences.
@@ -232,10 +231,9 @@ def list_all_reports():
     Order by last_updated, desc
     :return:
     """
-    # session = Session()
-    # results = session.query(SpillReport).all()
-    results = SpillReport.query.all()
-    # session.close()
+    session = Session()
+    results = session.query(SpillReport).all()
+    session.close()
     reports_all = {}
     for res in results:
         report = result_to_dict(res)
@@ -277,10 +275,10 @@ def get_report(report_num, ts_url=None):
     :param ts_url: a timestamp in URL-safe format
     :return: spill report as a Python dict
     """
-    # session = Session()
+    session = Session()
     if not ts_url:
         # Get the last (most recent version) of this report
-        result = SpillReport.query.filter(
+        result = session.query(SpillReport).filter(
             SpillReport.report_num==report_num).order_by(
             SpillReport.last_updated.desc()).first()
 
@@ -288,11 +286,11 @@ def get_report(report_num, ts_url=None):
         # Get update at a specific timestamp
         # Convert ts_url to a timestamp object
         timestamp = datetime.strptime(ts_url, settings.filesafe_timestamp)
-        result = SpillReport.query.filter(
+        result = session.query(SpillReport).filter(
             SpillReport.report_num == report_num,
             SpillReport.last_updated == timestamp).first()
 
-    # session.close()
+    session.close()
 
     """
     Most efficient setup is:
@@ -325,15 +323,15 @@ def get_report_for_display(report_num, ts_url=None):
     final_report = get_report(report_num, ts_url)
     if not final_report:
         return None
-    # session = Session()
+    session = Session()
 
     # Get user's full name from user_id
-    user = User.query.filter(User.id == final_report.get('user_id')).first()
+    user = session.query(User).filter(User.id == final_report.get('user_id')).first()
     if user:
         final_report['recorded_by'] = user.staff_name
     else:
         final_report['recorded_by'] = 'Unknown User'
-    # session.close()
+    session.close()
 
     # Convert None to empty string for display
     display_report = null_to_empty_string(final_report)
@@ -371,12 +369,10 @@ def get_timestamps(report_num):
     :param report_num:
     :return:
     """
-    # session = Session()
+    session = Session()
     timestamps = []
     # Return a copy in human-readable form, another in URL-safe form
-    # results = SpillReport.query(SpillReport.last_updated).filter(SpillReport.report_num == report_num)
-    results = db.session.query(SpillReport.last_updated).filter(SpillReport.report_num == report_num)
-    for result in results:
+    for result in session.query(SpillReport.last_updated).filter(SpillReport.report_num == report_num):
         timestamp = result[0]
         ts_url = timestamp.strftime(settings.filesafe_timestamp)
         ts_display = timestamp.strftime(settings.display_date_fmt)
@@ -387,7 +383,7 @@ def get_timestamps(report_num):
             'ts_display': ts_display,
             'ts_ccg_format': ts_ccg_format
         })
-    # session.close()
+    session.close()
     logger.info('Report timestamps: %s' % timestamps)
     return timestamps
 
@@ -403,10 +399,10 @@ def current_time_nearest_sec():
 
 
 def get_attachments(report_num):
-    # session = Session()
+    session = Session()
     # Get all attachments for this report_num
     attachments = []
-    results = AttachedFile.query.filter(
+    results = session.query(AttachedFile).filter(
         AttachedFile.report_num == report_num).all()
     for res in results:
         res_dict = result_to_dict(res)
@@ -447,12 +443,12 @@ def attachments_to_db(report_num, attachments):
                        'type': extension}
         attach_list.append(attachment_data)
 
-    # session = Session()
+    session = Session()
     try:
         for attach in attach_list:
-            # new_attach = AttachedFile(**attach)
-            db.session.add(AttachedFile(**attach))
-        db.session.commit()
+            new_attach = AttachedFile(**attach)
+            session.add(new_attach)
+        session.commit()
         # If ok, move files here
         for filename in attachments:
             src = os.path.join(settings.attachments, filename)
@@ -460,8 +456,8 @@ def attachments_to_db(report_num, attachments):
             os.rename(src, dst)
     except (SQLAlchemyError, TypeError):
         logger.error(traceback.format_exc())
-    # finally:
-    #     session.close()
+    finally:
+        session.close()
 
 
 def save_report_data(report_data):
@@ -473,7 +469,7 @@ def save_report_data(report_data):
     :return:
     """
     success = False
-    # session = Session()
+    session = Session()
 
     # Convert coordinates, if exists
     coordinate_type = report_data.get('coordinate_type')
@@ -529,14 +525,14 @@ def save_report_data(report_data):
     logger.info('Updating spill report: %s (%s) at %s' % (
         report_name, report_num, ts))
     try:
-        # new_report = SpillReport(**report_data)
-        db.session.add(SpillReport(**report_data))
-        db.session.commit()
+        new_report = SpillReport(**report_data)
+        session.add(new_report)
+        session.commit()
         success = True
     except (SQLAlchemyError, TypeError):
         logger.error(traceback.format_exc())
-    # finally:
-    #     session.close()
+    finally:
+        session.close()
 
     # Handle attachments
     if attachments:

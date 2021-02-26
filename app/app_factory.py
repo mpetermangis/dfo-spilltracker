@@ -122,6 +122,8 @@ def create_app(register_blueprints=True):
             # user_tables.userdb.session.commit()
             db.session.commit()
 
+
+
         # Always add current user to templates
         @app.context_processor
         def inject_user():
@@ -131,6 +133,27 @@ def create_app(register_blueprints=True):
         app.register_blueprint(rep)
         app.register_blueprint(geo)
         app.register_blueprint(adm)
+
+        # Add index for reports
+        logger.info('Adding index for SpillReport...')
+        import flask_whooshalchemy as wa
+        from app.reports.reports_db import SpillReport
+        # Add search index
+        wa.search_index(app, SpillReport)
+        wa.create_index(app, SpillReport)
+
+        from app.user import User
+        wa.search_index(app, User)
+        wa.create_index(app, User)
+
+        @app.route('/su/<query_text>', methods=['GET'])
+        def user_search(query_text):
+            # session = db.Session()
+            # q = session.query(SpillReport)
+            # results = q.search(query_text).all()
+            # results = db.SpillReport.query.search(q, limit=10)
+            results = User.query.search(query_text)
+            print(results)
 
         # Add index endpoint
         @app.route('/', methods=['GET'])
