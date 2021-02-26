@@ -1,8 +1,10 @@
+"""
+This file contains methods and Flask endpoints to convert
+among different coordinate types.
+"""
+
 from flask import Blueprint, request, jsonify
 import math
-"""
-This file contains methods to convert among different coordinate types
-"""
 
 # Flask blueprint for geo operations
 geo = Blueprint('geo', __name__, url_prefix='/geo')

@@ -10,4 +10,3 @@ python-dotenv
 email_validator
 bcrypt
 cryptography
-uwsgi

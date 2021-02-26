@@ -37,8 +37,8 @@ class SpillReport(Base):
                 nullable=False)
     last_updated = Column(DateTime,
                           nullable=False)
-    spill_id = Column(Integer,
-                     nullable=False)
+    # spill_id = Column(Integer,
+    #                  nullable=False)
     recorded_by = Column(Text)
     user_id = Column(Integer, nullable=False)
     """
@@ -100,7 +100,7 @@ class SpillReport(Base):
     roc_officer = Column(Text)
 
     # Additional fields added Feb 2021
-    # TODO: update report form, add these fields
+    # Done: add these fields to report form, and report display
     er_region = Column(Text)
     fleet_tasking = Column(Text)
     station_or_ship = Column(Text)
@@ -127,16 +127,15 @@ class AttachedFile(Base):
 Base.metadata.create_all(engine)
 
 
-# TODO add spill_id_seq
-# Create polrep and spill_id sequences
+# Create polrep sequence
 polrep_seq = Sequence('polrep_num')
-spill_id_seq = Sequence('spill_id_seq')
+# spill_id_seq = Sequence('spill_id_seq')
 try:
     engine.execute(CreateSequence(polrep_seq))
-    engine.execute(CreateSequence(spill_id_seq))
+    # engine.execute(CreateSequence(spill_id_seq))
 except ProgrammingError:
     # Sequence already exists, ignore
-    logger.warning('Sequence "polrep_num" and/or "spill_id_seq" exists.')
+    logger.warning('Sequence "polrep_num" exists.')
     pass
 
 # TODO; Update sequence on Jan 1
@@ -285,6 +284,10 @@ def get_report(report_num, ts_url=None):
     filter the results in regular python, outside of SQLalchemy. 
     """
 
+    if not result:
+        logger.warning('Report num %s does not exist!' % report_num)
+        return None
+
     final_report = result_to_dict(result)
     return final_report
 
@@ -298,6 +301,8 @@ def get_report_for_display(report_num, ts_url=None):
     """
 
     final_report = get_report(report_num, ts_url)
+    if not final_report:
+        return None
     session = Session()
 
     # Get user's full name from user_id
@@ -334,7 +339,7 @@ def get_report_for_display(report_num, ts_url=None):
     display_report['coord_pattern'] = coord_pattern
     display_report['coord_placeholder'] = coord_placeholder
     display_report['coord_help'] = coord_help + coord_placeholder
-    logger.info(display_report)
+    logger.info('Got report: %s' % display_report)
     return display_report
 
 
@@ -359,7 +364,7 @@ def get_timestamps(report_num):
             'ts_ccg_format': ts_ccg_format
         })
     session.close()
-    logger.info(timestamps)
+    logger.info('Report timestamps: %s' % timestamps)
     return timestamps
 
 
@@ -403,24 +408,20 @@ def get_file_extension(filename):
         return ''
 
 
-def attachments_to_db(spill_id, report_num, attachments):
+def attachments_to_db(report_num, attachments):
     # Create folder for report number
     # upload_root = os.path.join(settings.base_dir, 'static', 'attachments')
     report_folder = os.path.join(settings.upload_root, report_num)
     os.makedirs(report_folder, exist_ok=True)
     attach_list = []
     for filename in attachments:
-        # Move all attachments to the report folder. NO, DO THIS LATER.
-        # filebase = os.path.basename(filename)
-        # new_filename = os.path.join(report_folder, filebase)
-        # logger.info('Moving file: %s > %s' % (filename, new_filename))
-        # os.rename(filename, new_filename)
+        # All attachments will be moved to the report folder LATER.
         extension = get_file_extension(filename)
 
-        attach_data = {'report_num': report_num,
+        attachment_data = {'report_num': report_num,
                        'filename': filename,
                        'type': extension}
-        attach_list.append(attach_data)
+        attach_list.append(attachment_data)
 
     session = Session()
     try:
@@ -482,10 +483,6 @@ def save_report_data(report_data):
     report_data.pop('spill_date_html', None)
     report_data.pop('attachments', None)
 
-    # TODO: add real users
-    # report_data['recorded_by'] = 'Default user'
-    # report_data['user_id'] = user_id
-
     # Round off times to nearest second
     now = current_time_nearest_sec()
     report_data['last_updated'] = now
@@ -497,28 +494,33 @@ def save_report_data(report_data):
     ALTER SEQUENCE polrepnum RESTART WITH 1;
     """
     report_num = report_data.get('report_num')
+    report_name = report_data.get('report_name')
+    ts = now.strftime(settings.display_date_fmt)
     if not report_num:
         # This is a New report
-        logger.info('Saving a NEW report')
         report_num = get_next_polrep_num()
         report_data['report_num'] = report_num
+        logger.info('Creating a NEW report with report #: %s' % report_num)
 
-    spill_id = report_data.get('spill_id')
-    if not spill_id:
-        # This is a NEW spill event, increment the next spill ID
-        session = Session()
-        max_id = session.query(func.max(SpillReport.spill_id)).scalar()
-        if not max_id:
-            max_id = 0
-        spill_id = max_id + 1
-        logger.info('New spill report: %s at %s' % (
-            spill_id, now.strftime(settings.display_date_fmt)))
-        report_data['spill_id'] = spill_id
-    else:
-        spill_id = int(spill_id.strip())
-        report_data['spill_id'] = spill_id
-        logger.info('Updating spill report: %s at %s' % (
-            spill_id, now.strftime(settings.display_date_fmt)))
+    # spill_id = report_data.get('spill_id')
+    # if not spill_id:
+    #     # This is a NEW spill event, increment the next spill ID
+    #     session = Session()
+    #     max_id = session.query(func.max(SpillReport.spill_id)).scalar()
+    #     if not max_id:
+    #         max_id = 0
+    #     spill_id = max_id + 1
+    #     logger.info('New spill report: %s at %s' % (
+    #         spill_id, now.strftime(settings.display_date_fmt)))
+    #     report_data['spill_id'] = spill_id
+    # else:
+    #     spill_id = int(spill_id.strip())
+    #     report_data['spill_id'] = spill_id
+    #     logger.info('Updating spill report: %s at %s' % (
+    #         spill_id, now.strftime(settings.display_date_fmt)))
+
+    logger.info('Updating spill report: %s (%s) at %s' % (
+        report_name, report_num, ts))
     try:
         new_report = SpillReport(**report_data)
         session.add(new_report)
@@ -531,8 +533,8 @@ def save_report_data(report_data):
 
     # Handle attachments
     if attachments:
-        attachments_to_db(spill_id, report_num, attachments)
-    return spill_id, report_num, success, 'OK'
+        attachments_to_db(report_num, attachments)
+    return report_num, success, 'OK'
 
 
 def main():

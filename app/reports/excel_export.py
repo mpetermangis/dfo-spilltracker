@@ -13,7 +13,7 @@ from app.reports import reports_db
 from app import settings
 
 logger = settings.setup_logger(__name__)
-templates = os.path.join(settings.base_dir, 'templates')
+exports = settings.report_exports
 
 
 def list_report_fields():
@@ -30,7 +30,7 @@ def list_report_fields():
 
 def cleanup_old_reports():
     # Delete any existing report
-    exist_reports = glob(os.path.join(templates, 'report*.xlsx'))
+    exist_reports = glob(os.path.join(exports, 'report*.xlsx'))
     for existing in exist_reports:
         logger.warning('Delete old report dump: %s' % existing)
         try:
@@ -66,7 +66,7 @@ def dump_all_excel():
         sheet.append(row_data)
 
     fname = 'reports_%s.xlsx' % datetime.now().strftime(settings.filesafe_timestamp)
-    export_file = os.path.join(templates, fname)
+    export_file = os.path.join(exports, fname)
     logger.info('Save data to %s' % export_file)
     book.save(export_file)
     book.close()
@@ -89,10 +89,10 @@ def report_to_excel(report):
     # Set the output filename
     report_num = report.get('report_num')
     last_updated = report.get('last_updated')
-    export_file = os.path.join(templates, 'report_%s_v%s.xlsx' % (
+    export_file = os.path.join(exports, 'report_%s_v%s.xlsx' % (
         report_num, last_updated.strftime(settings.filesafe_timestamp)))
     logger.info('Export to: %s' % export_file)
-    spill_template = os.path.join(templates, 'SpillTemplate.xlsx')
+    spill_template = os.path.join(settings.templates, 'SpillTemplate.xlsx')
 
     # Open spill template, add content using named ranges
     book = load_workbook(spill_template)
@@ -110,6 +110,7 @@ def report_to_excel(report):
             val = val.strftime(settings.display_date_fmt)
         coord = named_range_to_cell(book, name)
         if not coord:
+            logger.warning('Excel template is missing the field: %s' % name)
             continue
         sheet[coord] = val
         fcount += 1

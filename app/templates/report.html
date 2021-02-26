@@ -26,7 +26,7 @@
         <p>Report #: {{ report.report_num }}</p>
         <p>Report Name: {{ report.report_name }}</p>
         <p>Update Text: {{ report.update_text }}</p>
-        <p>Updated By: {{ report.recorded_by }}</p>
+        <p>Last Updated By: {{ report.recorded_by }}</p>
         {# Timezone: #}
         <p>Report Date: {{ report.report_date_ccg }} {{ report.report_tz_ccg }}</p>
         <p>Spill Date: {{ report.spill_date_ccg }} {{ report.spill_tz_ccg }}</p>
@@ -39,18 +39,14 @@
         <h5>Situation Details:</h5>
         <p>Location/Position Coordinates Type: {{ report.coordinate_type }}</p>
         <p>Coordinates: {{ report.coordinates }}</p>
+
+        {# Show map only if report has coordinates #}
         {% if report.latitude and report.longitude %}
-            {# Dump vars to javascript
-            <script>
-                saved_latitude = {{ report.latitude | tojson }}
-                saved_longitude = {{ report.longitude | tojson }}
-                staticMap = true
-                console.log('Report has latlon: '+saved_latitude+', '+saved_longitude)
-            </script>  #}
             <div id="mapid" class="mt-3 mb-3"></div>
         {% endif %}
         {# Set values for lat-lon in HTML data #}
         <div id="coordInfo" data-latitude="{{ report.latitude }}" data-longitude="{{ report.longitude }}" data-markerdrag=""></div>
+        
         <p>Location Description: {{ report.location_description }}</p>
         <p>Pollutant: {{ report.pollutant }}</p>
         <p>Quantity: {{ report.quantity }}</p>
@@ -76,6 +72,11 @@
         <p>Area MCTS Centre: {{ report.area_mcts_centre }}</p>
         <p>DFO Public Affairs: {{ report.dfo_public_affairs }}</p>
         <p>ROC Officer: {{ report.roc_officer }}</p>
+        <hr>
+        <p>ER Region: {{ report.er_region }}</p>
+        <p>Fleet Tasking: {{ report.fleet_tasking }}</p>
+        <p>Station or Ship: {{ report.station_or_ship }}</p>
+        <p>Unit: {{ report.unit }}</p>
 
         {% if report.attachments %}
             <hr>
@@ -118,7 +119,7 @@
     </div>
 </div>
 
-{# Leaflet map, if needed #}
+{# JS for Leaflet map, only if needed #}
 {% if report.latitude and report.longitude %}
     <script type="text/javascript" src="/static/spill_lib.js"></script>
     <script type="text/javascript" src="/static/map_preview.js"></script>

@@ -24,9 +24,10 @@
 {# <form id="reportForm" class="mb-5" action="/save_report_data" method="post" enctype="multipart/form-data"> #}
 <form id="reportForm" class="mb-5" action="{{ url_for('report.save_report_data') }}" method="post" enctype="multipart/form-data">
             
+    {# spill_id has been removed from reports table. Now only using report_num 
     <!-- Hidden Input for spill id, only used if updating  -->
     <input class="spilldata" type="hidden" id="spill_id" name="spill_id" 
-        value="{% if action == 'Update' %} {{ report.spill_id}} {% endif %}">
+        value="{% if action == 'Update' %} {{ report.spill_id}} {% endif %}">  #}
 
     {# Only show the Report Number field for updates, not when creating a NEW report. #}
     {% if action == 'Update' %}
@@ -346,6 +347,30 @@
                 >{{ officer }}</option>
             {% endfor %}
         </select>
+    </div>
+
+    <div class="form-group">
+        <label for="er_region">ER Region</label>
+        <textarea rows="5" class="form-control spilldata" id="er_region" 
+            name="er_region">{{ report.er_region }}</textarea>
+    </div>
+
+    <div class="form-group">
+        <label for="fleet_tasking">Fleet Tasking</label>
+        <textarea rows="5" class="form-control spilldata" id="fleet_tasking" 
+            name="fleet_tasking">{{ report.fleet_tasking }}</textarea>
+    </div>
+
+    <div class="form-group">
+        <label for="station_or_ship">Station or Ship</label>
+        <textarea rows="5" class="form-control spilldata" id="station_or_ship" 
+            name="station_or_ship">{{ report.station_or_ship }}</textarea>
+    </div>
+
+    <div class="form-group">
+        <label for="unit">Unit</label>
+        <textarea rows="5" class="form-control spilldata" id="unit" 
+            name="unit">{{ report.unit }}</textarea>
     </div>
 
     <button type="submit" id="reportSaveBtn" class="btn btn-primary">Save Report</button>

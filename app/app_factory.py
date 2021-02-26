@@ -20,6 +20,7 @@ from app.user import user_datastore
 from app.database import db
 from app.reports.reports_server import rep
 from app.geodata.coord_converter import geo
+from app.admin.admin_server import adm
 
 logger = settings.setup_logger(__name__)
 
@@ -129,6 +130,7 @@ def create_app(register_blueprints=True):
         # Register blueprints for Reports and other endpoints, only after creating user tables
         app.register_blueprint(rep)
         app.register_blueprint(geo)
+        app.register_blueprint(adm)
 
         # Add index endpoint
         @app.route('/', methods=['GET'])

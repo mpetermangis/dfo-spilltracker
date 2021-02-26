@@ -60,6 +60,9 @@ def show_report(report_num, timestamp=None):
     :return:
     """
     final_report = db.get_report_for_display(report_num, timestamp)
+    if final_report is None:
+        # Report number was not found, go to 404 page
+        return render_template('404.html')
     # Render the show_report template (a read-only display of a report's state at a given time),
     # along with links to all of the timestamps for this report
     report_timestamps = db.get_timestamps(report_num)
@@ -115,10 +118,10 @@ def save_report_data():
     # report_num = data.get('report_num')
     attachments = save_attachments_to_disk(request)
 
-    # Add attachments before saving to DB
+    # Add attachments and user id before saving to DB
     data['attachments'] = attachments
     data['user_id'] = current_user.id
-    spill_id, report_num, success, status = db.save_report_data(data)
+    report_num, success, status = db.save_report_data(data)
     if success:
         logger.info('Saved OK, redirect to show_report: %s' % report_num)
         # Send notification email here
