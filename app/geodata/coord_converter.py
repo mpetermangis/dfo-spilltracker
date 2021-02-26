@@ -1,11 +1,36 @@
+from flask import Blueprint, request, jsonify
 import math
 """
 This file contains methods to convert among different coordinate types
 """
 
-# TODO: convert from latlon to x format when user clicks point on the map, or moves point.
+# Flask blueprint for geo operations
+geo = Blueprint('geo', __name__, url_prefix='/geo')
 
 
+@geo.route('/latlon_to_coords', methods=['POST'])
+def latlon_to_coords():
+    data = request.json
+    coords = convert_from_latlon(
+        data.get('lat'), data.get('lng'))
+    return jsonify(success=True, data=coords), 200
+
+
+@geo.route('/chk_coordinates', methods=['POST'])
+def chk_coordinates():
+    data = request.json
+    coordinate_type = data.get('coordinate_type')
+    coord_str = data.get('coord_str')
+    status, latitude, longitude = convert_to_latlon(
+        coordinate_type, coord_str)
+    if not status == 'OK':
+        return jsonify(success=False, msg=status), 400
+    else:
+        data = {'lat': latitude, 'lon': longitude}
+        return jsonify(success=True, msg=status, data=data), 200
+
+
+# Done: convert from latlon to x format when user clicks point on the map, or moves point.
 def degree_to_decimal_min(degree_part):
     """
     Converts remainder part of a degree to decimal minutes

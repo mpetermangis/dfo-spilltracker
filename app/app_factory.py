@@ -9,14 +9,19 @@ https://stackoverflow.com/a/64680953
 """
 
 from flask import Flask, render_template
-from flask_security import Security
-from app import settings
-from app.user import user_datastore
+from flask_security import Security, login_required
+from flask_login import current_user
 from flask_cors import CORS
-from app.database import db
-
 from flask_security.forms import RegisterForm, Required
 from wtforms import StringField
+
+from app import settings
+from app.user import user_datastore
+from app.database import db
+from app.reports.reports_server import rep
+from app.geodata.coord_converter import geo
+
+logger = settings.setup_logger(__name__)
 
 
 def create_app(register_blueprints=True):
@@ -99,19 +104,33 @@ def create_app(register_blueprints=True):
         # Create DB tables with the SQLAlchemyUserDatastore config as defined above
         db.create_all()
 
+        # Executes before the first request is processed.
+        @app.before_first_request
+        def before_first_request():
+            # Create any user/role database tables that don't exist yet.
+            # No, this is done in user_db
+            # pass
+            # user_tables.userdb.create_all()
+            # userdb.create_all()
+
+            # Create the Roles, unless they already exist
+            user_datastore.find_or_create_role(name='admin', description='Administrator')
+            user_datastore.find_or_create_role(name='user', description='CCG User')
+            user_datastore.find_or_create_role(name='observer', description='Observer with read-only access')
+
+            # user_tables.userdb.session.commit()
+            db.session.commit()
+
         # Always add current user to templates
-        from flask_login import current_user
         @app.context_processor
         def inject_user():
             return dict(user=current_user)
 
-        # Register blueprints for Reports endpoint, only after creating user tables
-        from app.reports.reports_server import rep
+        # Register blueprints for Reports and other endpoints, only after creating user tables
         app.register_blueprint(rep)
+        app.register_blueprint(geo)
 
         # Add index endpoint
-        from flask_security import login_required
-        logger = settings.setup_logger(__name__)
         @app.route('/', methods=['GET'])
         @login_required
         def index():

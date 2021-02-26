@@ -4,13 +4,13 @@ Future: send email notifications
 """
 
 import os
-import reports_db
-import settings
 from datetime import datetime
 from glob import glob
 import traceback
-
 from openpyxl import Workbook, load_workbook
+
+from app.reports import reports_db
+from app import settings
 
 logger = settings.setup_logger(__name__)
 templates = os.path.join(settings.base_dir, 'templates')

@@ -65,7 +65,7 @@ function updateCoordsFromLatLng(position){
     var jsonData = JSON.stringify(position)
     console.log('Sending marker position from map: ' +jsonData)
     var result = $.post({
-        url: frontendHost + '/latlon_to_coords', 
+        url: frontendHost + '/geo/latlon_to_coords', 
         data: jsonData,
         dataType: "json",
         contentType: "application/json; charset=utf-8",
@@ -136,7 +136,7 @@ $('#coordinates').change( function() {
 
     console.log(`Updating latlon and map from coords: ${data}`)
     var result = $.post({
-        url: frontendHost + '/chk_coordinates', 
+        url: frontendHost + '/geo/chk_coordinates', 
         data: JSON.stringify(data),
         dataType: "json",
         contentType: "application/json; charset=utf-8",

@@ -4,15 +4,16 @@ Adapted from:
 https://docs.aws.amazon.com/ses/latest/DeveloperGuide/examples-send-using-smtp.html
 """
 
-import settings
 import smtplib
 import email.utils
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+import jinja2
+
+from app import settings
 
 # For rendering HTML templates
-import jinja2
-templateLoader = jinja2.FileSystemLoader(searchpath='./templates')
+templateLoader = jinja2.FileSystemLoader(searchpath='./app/templates')
 env = jinja2.Environment(loader=templateLoader)
 email_template = env.get_template('report_email.html')
 

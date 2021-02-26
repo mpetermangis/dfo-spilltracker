@@ -1,20 +1,18 @@
 
 import os
 from datetime import datetime, timedelta, date
-from sqlalchemy import func, create_engine, Column, Integer, String, Text, DateTime, Float, ForeignKey
+from sqlalchemy import func, create_engine, Column, Integer, Text, DateTime, Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError, ProgrammingError
 from sqlalchemy.schema import Sequence, CreateSequence
-import psycopg2
 import traceback
 
-from app import settings, lookups
-from app.geo import coord_converter
+from app import settings
+from app.utils import lookups
+from app.geodata import coord_converter
 from app.user import User
-# import lookups
 
-import flask_whooshalchemy
 from whoosh.analysis import StemmingAnalyzer
 
 engine = create_engine(settings.SPILL_TRACKER_DB_URL)

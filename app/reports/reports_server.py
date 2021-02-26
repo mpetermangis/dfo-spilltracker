@@ -1,17 +1,13 @@
-from flask import Blueprint, flash, jsonify, request, redirect, render_template, url_for, send_file, abort
-from flask_security import login_required
+from flask import Blueprint, flash, jsonify, request, redirect, render_template, url_for, send_file
 from flask_login import current_user
 from werkzeug.utils import secure_filename
-# import settings
 import os
-import subprocess
-import traceback
 
 from app.reports import excel_export
 from app.reports import reports_db as db
-from app import settings, lookups, notifications
+from app import settings
+from app.utils import notifications, lookups
 
-# import notifications
 
 logger = settings.setup_logger(__name__)
 
@@ -160,3 +156,13 @@ def save_attachments_to_disk(request):
                 os.path.basename(filename))
     logger.info('Saved attachments: %s' % attached)
     return attached
+
+
+# Export all reports to Excel
+@rep.route('/all_data', methods=['GET'])
+def db_dump():
+    # Divide db dump by project
+    export_file = excel_export.dump_all_excel()
+    return send_file(export_file,
+                     as_attachment=True,
+                     attachment_filename=os.path.basename(export_file))
