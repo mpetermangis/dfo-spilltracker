@@ -1,0 +1,82 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+{% block head %}
+
+{% set title = 'CCG/DFO Spill Tracker' %}
+<!-- navbar & header here -->
+{% include 'snippets/_header.html' %}
+
+<link rel="stylesheet" type="text/css" href="/static/spill.css">
+
+{% endblock head %}
+</head>
+
+<body>
+<header>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="#">CCG/DFO Spill Tracker</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSpilltracker" 
+            aria-controls="navbarSpilltracker" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse order-1" id="navbarSpilltracker">
+            {# Navbar menu on left side #}
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('index') }}">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('report.reports_all') }}">View All Reports</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('report.new_report') }}">New Report</a>
+                </li>
+            </ul>
+            
+            {# Navbar menu on right side #}
+            <ul class="navbar-nav ml-auto">
+                {# Show user menu if logged in, otherwise show Login link #}
+                {% if user %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userMenu" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        {{ user.staff_name }}
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="userMenu">
+                        <a class="dropdown-item" href="/logout">Logout</a>
+                        <a class="dropdown-item" href="/change">Change Password</a>
+                        {# <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="#">Something else here</a> #}
+                        </div>
+                    </li>
+                {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('security.login') }}">Login</a>
+                    </li>
+                {% endif %}
+            </ul>
+
+        </div>
+            
+    </nav>
+
+</header>
+
+{% block fullpage %}
+<div class="container">
+<div class="content">
+
+    <div class="text-danger text-center font-weight-bold">PROTOTYPE. Not to be used operationally.</div>
+
+    {% block content %}
+    {% endblock content %}
+
+</div>  <!-- content -->
+</div>   <!-- container -->
+{% endblock fullpage %}
+
+{% include 'snippets/_footer.html' %}
+</body>
+</html>

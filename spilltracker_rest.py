@@ -32,7 +32,6 @@ port = 5000
 app = Flask(__name__)
 CORS(app)
 
-
 # Disable debug mode on prod
 # if socket.gethostname() == 'spilltracker':
 if settings.PROD_SERVER:
