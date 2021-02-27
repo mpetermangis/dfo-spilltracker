@@ -63,8 +63,10 @@ def create_app(register_blueprints=True):
 
     # Disable caching on downloaded files
     app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
-    # Disable track modifications: https://github.com/pallets/flask-sqlalchemy/issues/365
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+    # SQLALCHEMY_TRACK_MODIFICATIONS must be enabled for flask-whooshalchemy3
+    # fulltext search. If disabled, it will NOT propagate updates to the search index.
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
 
     # Flask-Security optionally sends email notification to users upon registration, password reset, etc.
     # It uses Flask-Mail behind the scenes.
@@ -140,7 +142,7 @@ def create_app(register_blueprints=True):
         from app.reports.reports_db import SpillReport
         # Add search index
         wa.search_index(app, SpillReport)
-        wa.create_index(app, SpillReport)
+        # wa.create_index(app, SpillReport)
 
         from app.user import User
         wa.search_index(app, User)

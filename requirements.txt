@@ -10,3 +10,4 @@ python-dotenv
 email_validator
 bcrypt
 cryptography
+flask-whooshalchemy3

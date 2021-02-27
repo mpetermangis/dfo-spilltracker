@@ -53,6 +53,8 @@ PASSWORD_SMTP = settings.smtp_pass
 
 
 def notify_report_update(report_num, report_name):
+
+    logger.info('Sending email update for: %s' % report_num)
     # The subject line of the email.
     SUBJECT = 'Updated Spill Report - %s (%s)' % (report_name, report_num)
 

@@ -14,6 +14,11 @@ logger = settings.setup_logger(__name__)
 
 rep = Blueprint('report', __name__, url_prefix='/report')
 
+NOTIFY_EMAILS = False
+# Enable emails on prod
+if settings.PROD_SERVER:
+    NOTIFY_EMAILS = True
+
 
 # All endpoints in this blueprint require user to be logged in
 @rep.before_request
@@ -42,11 +47,16 @@ def reports_all():
 
 @rep.route('/search/<query_text>', methods=['GET'])
 def report_search(query_text):
+    logger.info('Searching text: %s' % query_text)
     # session = db.Session()
     # q = session.query(SpillReport)
     # results = q.search(query_text).all()
-    results = SpillReport.query.search(query_text, limit=10)
-    print(results)
+    results = SpillReport.query.search(query_text, limit=10).all()
+    if len(results) is None:
+        logger.warning('No search results')
+    for result in results:
+        print(str(result))
+    return 'Search results: %s' % ', '.join(str(r) for r in results)
 
 
 @rep.route('/export/<report_num>/<timestamp>', methods=['GET'])
@@ -135,8 +145,11 @@ def save_report_data():
     if success:
         logger.info('Saved OK, redirect to show_report: %s' % report_num)
         # Send notification email here
-        report_name = data.get('report_name')
-        notifications.notify_report_update(report_num, report_name)
+        if not NOTIFY_EMAILS:
+            logger.warning('Email notifications disabled in test environment!')
+        else:
+            report_name = data.get('report_name')
+            notifications.notify_report_update(report_num, report_name)
         return redirect(url_for('report.show_report', report_num=report_num))
     else:
         resp = jsonify(success=False, msg=status)

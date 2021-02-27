@@ -31,7 +31,8 @@
   </thead>
   <tbody>
     {% for report in reports_list %}
-    <tr>
+      {% include 'snippets/_report_row.html' %}
+    {# <tr>
         <th scope="row">
             <a href="{{ url_for('report.show_report', report_num=report.report_num) }}">
             <b>{{ report.report_num }}</b></a>
@@ -40,7 +41,7 @@
         <td>{{ report.pollutant}}</td>
         <td>{{ report.quantity}} </td>
         <td>{{ report.quantity_units}} </td>
-    </tr>
+    </tr>  #}
     {% endfor %}
     
   </tbody>
