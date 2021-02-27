@@ -14,6 +14,7 @@ from flask_login import current_user
 from flask_cors import CORS
 from flask_security.forms import RegisterForm, Required
 from wtforms import StringField
+import flask_whooshalchemy as wa
 
 from app import settings
 from app.user import user_datastore
@@ -21,6 +22,8 @@ from app.database import db
 from app.reports.reports_server import rep
 from app.geodata.coord_converter import geo
 from app.admin.admin_server import adm
+from app.reports import reports_db
+from app.reports.reports_db import SpillReport
 
 logger = settings.setup_logger(__name__)
 
@@ -110,11 +113,6 @@ def create_app(register_blueprints=True):
         # Executes before the first request is processed.
         @app.before_first_request
         def before_first_request():
-            # Create any user/role database tables that don't exist yet.
-            # No, this is done in user_db
-            # pass
-            # user_tables.userdb.create_all()
-            # userdb.create_all()
 
             # Create the Roles, unless they already exist
             user_datastore.find_or_create_role(name='admin', description='Administrator')
@@ -124,7 +122,9 @@ def create_app(register_blueprints=True):
             # user_tables.userdb.session.commit()
             db.session.commit()
 
-
+            # Create polrep sequence to generate unique POLREP numbers
+            logger.info('Initialize polrep sequence from app factory...')
+            reports_db.create_polrep_sequence()
 
         # Always add current user to templates
         @app.context_processor
@@ -136,26 +136,23 @@ def create_app(register_blueprints=True):
         app.register_blueprint(geo)
         app.register_blueprint(adm)
 
-        # Add index for reports
+        # Add search index for reports
         logger.info('Adding index for SpillReport...')
-        import flask_whooshalchemy as wa
-        from app.reports.reports_db import SpillReport
-        # Add search index
         wa.search_index(app, SpillReport)
         # wa.create_index(app, SpillReport)
 
-        from app.user import User
-        wa.search_index(app, User)
-        wa.create_index(app, User)
+        # from app.user import User
+        # wa.search_index(app, User)
+        # wa.create_index(app, User)
 
-        @app.route('/su/<query_text>', methods=['GET'])
-        def user_search(query_text):
-            # session = db.Session()
-            # q = session.query(SpillReport)
-            # results = q.search(query_text).all()
-            # results = db.SpillReport.query.search(q, limit=10)
-            results = User.query.search(query_text)
-            print(results)
+        # @app.route('/su/<query_text>', methods=['GET'])
+        # def user_search(query_text):
+        #     # session = db.Session()
+        #     # q = session.query(SpillReport)
+        #     # results = q.search(query_text).all()
+        #     # results = db.SpillReport.query.search(q, limit=10)
+        #     results = User.query.search(query_text)
+        #     print(results)
 
         # Add index endpoint
         @app.route('/', methods=['GET'])
@@ -164,7 +161,7 @@ def create_app(register_blueprints=True):
             # Users must be authenticated to view the home page, but they don't have to have any particular role.
             # Flask-Security will display a login form if the user isn't already authenticated.
             # user = get_current_user()
-            logger.info('Homepage loaded by: %s (id %s)' % (current_user.email, current_user.id))
+            logger.info('Homepage requested by: %s (id %s)' % (current_user.email, current_user.id))
             return render_template('index.html',
                                    user=current_user)
 

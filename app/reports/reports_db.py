@@ -22,12 +22,8 @@ import flask_whooshalchemy
 from whoosh.analysis import StemmingAnalyzer
 
 engine = create_engine(settings.SPILL_TRACKER_DB_URL)
-# 
-# Base = declarative_base()
-# Session = sessionmaker()
-# Session.configure(bind=engine)
 
-logger = settings.setup_logger('reports_db')
+logger = settings.setup_logger(__name__)
 
 
 """
@@ -54,8 +50,6 @@ class SpillReport(db.Model):
                 nullable=False)
     last_updated = Column(DateTime,
                           nullable=False)
-    # spill_id = Column(Integer,
-    #                  nullable=False)
     recorded_by = Column(Text)
     user_id = Column(Integer, nullable=False)
     """
@@ -144,20 +138,21 @@ class AttachedFile(db.Model):
     type = Column(Text, nullable=False)
 
 
-# Create tables
-# Base.metadata.create_all(engine)
+def create_polrep_sequence():
+    """
+    Create a polrep sequence to generate unique POLREP numbers
+    :return:
+    """
+    logger.info('Creating DB sequence polrep_num')
+    polrep_seq = Sequence('polrep_num')
+    try:
+        engine.execute(CreateSequence(polrep_seq))
+        logger.info('Sequence created OK')
+    except ProgrammingError:
+        # Sequence already exists, ignore
+        logger.warning('Sequence "polrep_num" exists.')
+        pass
 
-
-# Create polrep sequence
-polrep_seq = Sequence('polrep_num')
-# spill_id_seq = Sequence('spill_id_seq')
-# try:
-#     engine.execute(CreateSequence(polrep_seq))
-#     # engine.execute(CreateSequence(spill_id_seq))
-# except ProgrammingError:
-#     # Sequence already exists, ignore
-#     logger.warning('Sequence "polrep_num" exists.')
-#     pass
 
 # TODO; Update sequence on Jan 1
 # Use the ALTER SEQUENCE command to modify PostgreSQL sequences.
