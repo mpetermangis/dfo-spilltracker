@@ -20,6 +20,7 @@ from app import settings
 from app.user import user_datastore
 from app.database import db
 from app.reports.reports_server import rep
+from app.geodata import coord_converter
 from app.geodata.coord_converter import geo
 from app.admin.admin_server import adm
 from app.reports import reports_db
@@ -118,6 +119,8 @@ def create_app(register_blueprints=True):
             user_datastore.find_or_create_role(name='admin', description='Administrator')
             user_datastore.find_or_create_role(name='user', description='CCG User')
             user_datastore.find_or_create_role(name='observer', description='Observer with read-only access')
+
+            coord_converter.create_map_view()
 
             # user_tables.userdb.session.commit()
             db.session.commit()

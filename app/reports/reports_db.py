@@ -1,7 +1,7 @@
 
 import os
 from datetime import datetime, timedelta, date
-from sqlalchemy import func, create_engine, Column, Integer, Text, DateTime, Float
+from sqlalchemy import create_engine, Column, Integer, Text, DateTime, Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError, ProgrammingError

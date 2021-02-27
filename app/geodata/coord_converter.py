@@ -4,7 +4,27 @@ among different coordinate types.
 """
 
 from flask import Blueprint, request, jsonify
+from sqlalchemy import create_engine
 import math
+
+from app import settings
+
+logger = settings.setup_logger(__name__)
+
+engine = create_engine(settings.SPILL_TRACKER_DB_URL)
+
+
+# Create view for spill reports in PostGIS
+def create_map_view():
+    logger.info('Creating report_map_view...')
+    engine.execute('DROP VIEW IF EXISTS report_map_view;')
+    engine.execute(''' CREATE VIEW report_map_view AS
+    SELECT DISTINCT ON (report_num) ST_SetSRID( ST_Point( longitude, latitude), 4326) AS geometry, 
+    * FROM public.spill_reports
+    WHERE latitude IS NOT NULL AND longitude IS NOT NULL
+    ORDER BY report_num, last_updated DESC;
+    ''')
+
 
 # Flask blueprint for geo operations
 geo = Blueprint('geo', __name__, url_prefix='/geo')
