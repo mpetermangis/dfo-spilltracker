@@ -165,4 +165,13 @@ def create_app(register_blueprints=True):
             return render_template('index.html',
                                    user=current_user)
 
+        # Auth endpoint for nginx: https://stackoverflow.com/a/55737013
+        # Allow redirect to Geoserver if auth OK
+        @app.route("/auth")
+        def nginx_auth():
+            if current_user.is_authenticated:
+                return "You are logged in! Sweet!"
+            else:
+                return 'Sorry, but unfortunately you\'re not logged in.', 401
+
         return app
