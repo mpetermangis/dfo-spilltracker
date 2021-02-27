@@ -4,10 +4,9 @@
 from app.app_factory import create_app
 from app import settings
 
+application = create_app()
 
 if __name__ == "__main__":
-
-    application = create_app()
 
     # Setup logging
     applog = settings.setup_logger(__name__)
