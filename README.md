@@ -7,6 +7,63 @@ This readme is the installation guide for the DFO Spill Tracker.
 
 A Linux server (Ubuntu or Debian) with 1GB memory. 
 
+## Geoserver
+
+### Proxy Base URL
+
+Unclear how this is supposed to be set. We have tried the following:
+
+http://marinepollution.ca:8080/geoserver
+
+https://marinepollution.ca/geoserver < with nginx proxy
+
+http://localhost:8080/geoserver
+
+With or without geoserver? 
+Maybe without? see: https://gis.stackexchange.com/a/304623
+
+http://localhost:8080
+
+No, that doesn't work, because then it tries to access URLs (from the end-user's browser) like this:
+http://localhost:8080/polrep/wms?service=WMS&...
+Clearly not going to work, since this request is coming from a remote machine, not localhost. 
+
+And it has to have /geoserver at the end, or we get a URL like:
+http://marinepollution.ca:8080/polrep/wms?...
+
+When it's supposed to be:
+http://marinepollution.ca:8080/geoserver/polrep/wms?...
+
+Get Capabilities URL:
+http://marinepollution.ca:8080/geoserver/ows?service=wms&version=1.3.0&request=GetCapabilities
+
+
+### PostGIS Table for Spill Reports
+
+We cannot do this with a view, because PostGIS requires a full table for setting SRID and adding indexes.  So, we'll have to create a separate spatial table and keep it synchronized with the main one.  In any case, we don't want to turn the main report table into a spatial table, because we only want to have one version (the latest) for each report on the map. 
+
+I created a view that generates the latest version of each spill report, with PostGIS point geometry from lat-lon. This doesn't work in PostGIS as described above.  Then I did  SELECT into another table, where I was able to add a spatial index and set SRID correctly as follows:
+
+`select UpdateGeometrySRID('public', 'report_map_view', 'geometry', 4326);`
+
+`CREATE INDEX idx_report_map_mvw ON public.report_map_mvw USING gist(geometry);`
+
+However, this still does not work in Geoserver.  Why? Because we also need a primary key: 
+`﻿java.io.IOException: Cannot do natural order without a primary key, please add it or specify a manual sort over existing attributes` 
+
+Maybe also have to reproject as Web Mercator?
+
+Restricting access to /geoserver via an auth endpoint works in Nginx, but in Geoserver it causes CORS errors.  Even though CORS is enabled in the Geoserver Jetty config, does not work if we access the web interface via:
+
+https://marinepollution.ca/geoserver
+
+Have to go through:
+http://marinepollution.ca:8080/geoserver
+
+Also I tried using ssh tunneling, this did not work either. So we have to leave port 8080 wide open in Amz firewall, not ideal.  There are constant attempts to hack into geoserver. 
+
+
+
 ## Installation
 
 First basic setup, install required packages. 

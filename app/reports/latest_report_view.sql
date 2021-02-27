@@ -11,6 +11,12 @@ SELECT DISTINCT ON (report_num) ST_SetSRID( ST_Point( longitude, latitude), 4326
 WHERE latitude IS NOT NULL AND longitude IS NOT NULL
 ORDER BY report_num, last_updated DESC;
 
+CREATE VIEW report_map2 AS
+SELECT DISTINCT ON (report_num) ST_SetSRID( ST_MakePoint( longitude, latitude), 4326) AS geometry,
+* FROM public.spill_reports
+WHERE latitude IS NOT NULL AND longitude IS NOT NULL
+ORDER BY report_num, last_updated DESC;
 
-SELECT ST_SetSRID( ST_Point( longitude, latitude), 4326) AS geometry, * FROM public.spill_reports
+
+SELECT ST_SetSRID( ST_Point( longitude, latitude), 4326) AS geom geometry(POINT, 4326), * FROM public.spill_reports
 WHERE latitude IS NOT NULL AND longitude IS NOT NULL;
