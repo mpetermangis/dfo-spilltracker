@@ -138,20 +138,22 @@ class AttachedFile(db.Model):
     type = Column(Text, nullable=False)
 
 
-def create_polrep_sequence():
-    """
-    Create a polrep sequence to generate unique POLREP numbers
-    :return:
-    """
-    logger.info('Creating DB sequence polrep_num')
-    polrep_seq = Sequence('polrep_num')
-    try:
-        engine.execute(CreateSequence(polrep_seq))
-        logger.info('Sequence created OK')
-    except ProgrammingError:
-        # Sequence already exists, ignore
-        logger.warning('Sequence "polrep_num" exists.')
-        pass
+# def create_polrep_sequence():
+#     """
+#     Create a polrep sequence to generate unique POLREP numbers
+#     :return:
+#     """
+
+# Create a polrep sequence to generate unique POLREP numbers
+logger.info('Creating DB sequence polrep_num')
+polrep_seq = Sequence('polrep_num')
+try:
+    engine.execute(CreateSequence(polrep_seq))
+    logger.info('Sequence created OK')
+except ProgrammingError:
+    # Sequence already exists, ignore
+    logger.warning('Sequence "polrep_num" exists.')
+    pass
 
 
 # TODO; Update sequence on Jan 1

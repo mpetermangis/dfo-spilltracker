@@ -123,8 +123,8 @@ def create_app(register_blueprints=True):
             db.session.commit()
 
             # Create polrep sequence to generate unique POLREP numbers
-            logger.info('Initialize polrep sequence from app factory...')
-            reports_db.create_polrep_sequence()
+            # logger.info('Initialize polrep sequence from app factory...')
+            # reports_db.create_polrep_sequence()
 
         # Always add current user to templates
         @app.context_processor
