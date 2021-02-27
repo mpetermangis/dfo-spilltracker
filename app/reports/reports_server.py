@@ -145,7 +145,7 @@ def save_report_data():
     if success:
         logger.info('Saved OK, redirect to show_report: %s' % report_num)
         # Send notification email here
-        if not NOTIFY_EMAILS:
+        if not settings.NOTIFY_EMAILS:
             logger.warning('Email notifications disabled in test environment!')
         else:
             report_name = data.get('report_name')

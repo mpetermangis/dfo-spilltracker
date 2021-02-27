@@ -40,6 +40,10 @@ def setup_logger(name, level=logging.INFO):
 
 logger = setup_logger(__name__)
 
+# Notifications disabled by default, unless enabled in .env
+NOTIFY_EMAILS = os.environ.get('NOTIFY_EMAILS', False)
+logger.info('Email notifications set to: %s' % NOTIFY_EMAILS)
+
 base_dir = os.path.dirname(os.path.realpath(__file__))
 upload_root = os.path.join(base_dir, 'uploads')
 attachments = os.path.join(upload_root, 'attachments')
