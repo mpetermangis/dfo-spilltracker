@@ -116,6 +116,7 @@ class SpillReport(db.Model):
     fleet_tasking = Column(Text)
     station_or_ship = Column(Text)
     unit = Column(Text)
+    severity = Column(Integer)
 
     def __repr__(self):
         # this is how our object is printed when we print it out

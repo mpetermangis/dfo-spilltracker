@@ -30,8 +30,10 @@ $('#coordinate_type').change(function() {
         pattern = ''
         placeholder = ''
     }
-    console.log(ctype+ ': set pattern: ' + pattern)
-    $('#coordinates').attr('pattern', pattern)
-    $('#coordinates').attr('placeholder', placeholder)
-    $('#coordHelp').html('Format: '+placeholder)
+    if ( (pattern) && (placeholder) ){
+        console.log(ctype+ ': set pattern: ' + pattern)
+        $('#coordinates').attr('pattern', pattern)
+        $('#coordinates').attr('placeholder', placeholder)
+        $('#coordHelp').html('Format: '+placeholder)
+    }
 })

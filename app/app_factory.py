@@ -120,7 +120,8 @@ def create_app(register_blueprints=True):
             user_datastore.find_or_create_role(name='user', description='CCG User')
             user_datastore.find_or_create_role(name='observer', description='Observer with read-only access')
 
-            coord_converter.create_map_view()
+            if settings.PROD_SERVER:
+                coord_converter.create_map_view()
 
             # user_tables.userdb.session.commit()
             db.session.commit()

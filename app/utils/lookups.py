@@ -16,6 +16,8 @@ timezones = [('PST', 'America/Vancouver'), ('MST', 'America/Edmonton'),
              ('EST', 'America/Toronto'), ('AST', 'America/Halifax'),
              ('Newfoundland', 'America/St_Johns')]
 
+severity_levels = [1, 2, 3, 4, 5]
+
 tz_reversed = {}
 for display_tz, tz in timezones:
     tz_reversed[tz] = display_tz
@@ -24,4 +26,5 @@ lu = {'coord_types': coord_types,
       'poll_types': poll_types,
       'quantity_units': quantity_units,
       'timezones': timezones,
-      'roc_officers': roc_officers}
+      'roc_officers': roc_officers,
+      'severity_levels': severity_levels}

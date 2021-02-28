@@ -373,6 +373,17 @@
             name="unit">{{ report.unit }}</textarea>
     </div>
 
+    <div class="form-group">
+        <label for="roc_officer">Severity</label>
+        <select class="form-control spilldata" id="severity" name="severity">
+            {% for severity in lookups.severity_levels %}
+            <option value="{{ severity }}" 
+                {% if report.severity==severity %} selected {% endif %}
+                >{{ severity }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
     <button type="submit" id="reportSaveBtn" class="btn btn-primary">Save Report</button>
 
 </form>

@@ -6,6 +6,7 @@ var mymap = L.map('mapid', {
 // Default view (Canada-wide)
 var defaultView = [55.0, -90.5]
 var defaultZoom = 4
+var defaultCoordinateType = 'Decimal Degrees'
 mymap.setView(defaultView, defaultZoom)
 L.control.zoom({
     position: 'topright'
@@ -73,8 +74,14 @@ function updateCoordsFromLatLng(position){
     result.done(function(){
         console.log('Coordinates sent for validation.')
         var data = result.responseJSON.data
-        console.log(data)
+        console.debug(data)
         var coordType = $('#coordinate_type').val()
+        // If coordType is not set, use Decimal Degrees by default
+        if ( !($('#coordinate_type').val()) ){
+            coordType = defaultCoordinateType
+            console.log('coordinate_type is undefined. Set to : ' +coordType)
+            $('#coordinate_type').val(coordType)
+        }
         // Set value of coordinate field from returned coordinates
         var newCoords = data[coordType]
         console.log('Updated coords: '+newCoords)
@@ -87,25 +94,18 @@ function updateCoordsFromLatLng(position){
 
 // Bind dragend event for marker
 marker.on('dragend', function(event){
-    // var marker = event.target;
     var position = marker.getLatLng();
-    // var loc = new L.LatLng(position.lat, position.lng)
     marker.setLatLng(position, {draggable: editable});
-    // mymap.panTo(new L.LatLng(position.lat, position.lng))
-    // TODO: Update coordinate form fields from latlon
-    // var data = {}
-    // data.latitude = position.lat
-    // data.coordinate_type = position.lng
+    
+    // Update coordinate form fields from latlon
     updateCoordsFromLatLng(position)
 })
 
 // Add or move marker on double click
 mymap.on("dblclick", function(e) {
-    // e.preventDefault()
-    // var clickedLatLng = e.target.getLatLng()
+    
     var clickedLatLng = e.latlng
     console.log(`Double click at: ${clickedLatLng}`)
-    // console.log(`Double click at: ${clickedLatLng}`)
     marker.setLatLng(clickedLatLng)
     updateCoordsFromLatLng(clickedLatLng)
 })
