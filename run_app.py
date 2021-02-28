@@ -1,4 +1,4 @@
-from app import settings
+import settings
 from app.app_factory import create_app
 
 logger = settings.setup_logger(__name__)

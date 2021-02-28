@@ -16,14 +16,13 @@ from flask_security.forms import RegisterForm, Required
 from wtforms import StringField
 import flask_whooshalchemy as wa
 
-from app import settings
+import settings
 from app.user import user_datastore
 from app.database import db
 from app.reports.reports_server import rep
 from app.geodata import coord_converter
 from app.geodata.coord_converter import geo
 from app.admin.admin_server import adm
-from app.reports import reports_db
 from app.reports.reports_db import SpillReport
 
 logger = settings.setup_logger(__name__)

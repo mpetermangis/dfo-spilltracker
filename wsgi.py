@@ -2,7 +2,7 @@
 # Must be called 'application', otherwise we get this in uwsgi:
 # unable to find "application" callable in file /home/ubuntu/dfo-spilltracker/wsgi.py
 from app.app_factory import create_app
-from app import settings
+import settings
 
 application = create_app()
 

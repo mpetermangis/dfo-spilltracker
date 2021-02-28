@@ -6,7 +6,7 @@ import os
 from app.reports import excel_export
 from app.reports import reports_db as db
 from app.reports.reports_db import SpillReport
-from app import settings
+import settings
 from app.utils import notifications, lookups
 
 

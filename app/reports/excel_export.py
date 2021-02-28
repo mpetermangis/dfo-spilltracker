@@ -10,7 +10,7 @@ import traceback
 from openpyxl import Workbook, load_workbook
 
 from app.reports import reports_db
-from app import settings
+import settings
 
 logger = settings.setup_logger(__name__)
 exports = settings.report_exports

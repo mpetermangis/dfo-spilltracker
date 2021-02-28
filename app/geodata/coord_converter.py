@@ -7,7 +7,7 @@ from flask import Blueprint, request, jsonify
 from sqlalchemy import create_engine
 import math
 
-from app import settings
+import settings
 
 logger = settings.setup_logger(__name__)
 
