@@ -55,6 +55,17 @@
     border: 1px solid black;
 }
 
+.report-sample {
+    font-size: 0.8rem;
+    padding: 0 !important;
+}
+
+#report_map_leaflet {
+    height: 600px;
+    /* width: 80%; */
+    border: 1px solid black;
+}
+
 .exxon {
     margin-top: 0rem;
     /* background-image: url('/static/exxon-valdez.jpg'); */

@@ -2,8 +2,19 @@ from openpyxl import load_workbook
 import os
 import settings
 from datetime import datetime
+from traceback import format_exc
+from sqlalchemy import create_engine
+
+engine = create_engine(settings.SPILL_TRACKER_DB_URL)
 
 logger = settings.setup_logger(__name__)
+
+from app.reports.reports_db import db, SpillReport
+from app.app_factory import create_app
+
+logger.info('Creating app object in %s' % __name__)
+
+app = create_app()
 
 
 def open_legacy_file(path):
@@ -16,11 +27,45 @@ def fix_2017_format(report_num):
     return '2017-%s' % rep_num
 
 
+def erase_all_reports():
+    with app.app_context():
+        try:
+            logger.warning('About to delete all Spill Reports!')
+            num_rows_deleted = db.session.query(SpillReport).delete()
+            db.session.commit()
+            logger.warning('%s reports deleted.' % num_rows_deleted)
+        except:
+            logger.error(format_exc())
+            db.session.rollback()
+
+
+# Create a full table matching report_map_view
+# This is only called once, after loading legacy POLREPs
+def create_report_map_tbl():
+    logger.info('Creating report_map TABLE in PostGIS')
+    engine.execute('DROP TABLE IF EXISTS report_map_tbl;')
+    engine.execute('CREATE TABLE report_map_tbl AS SELECT * FROM report_map_view;')
+    # Add geo index to the geometry column
+    add_geo_index = '''
+    CREATE INDEX idx_geom_report_map
+    ON report_map_tbl
+    USING GIST (geometry);
+    '''
+    engine.execute(add_geo_index)
+
+
+
 def load_data_all(legacy_file):
+
+    erase_all_reports()
+
     logger.info('Opening: %s' % legacy_file)
     book = open_legacy_file(legacy_file)
     for year in ['2017', '2018', '2019']:
         load_data_year(year, book)
+    logger.info('Finished loading all legacy reports')
+    create_report_map_tbl()
+    logger.info('Done with legacy POLREPs. Please check PostGIS table.')
 
 
 def load_data_year(year, book):
@@ -42,10 +87,10 @@ def load_data_year(year, book):
         report_label = 'Report: %s, %s' % (report_num, report_name)
         # date comes in as a datetime object with 00:00 timestamp
         spill_date = row[2].value
-        # time is a string, need to add to date
+        # time is (usually) a string, need to add to date
         time_str = row[3].value
-        # Try to parse as datetime if not null, and not already a datetime
 
+        # Try to parse as datetime if not null, and not already a datetime
         TIME_SHORT = '%H:%M'
         TIME_LONG = '%H:%M:%S'
         TIME_AMPM = '%I:%M:%S %p'
@@ -53,6 +98,8 @@ def load_data_year(year, book):
             # Default: assume time_str was parsed as datetime.time
             time = time_str
             if type(time_str) is str:
+
+                time_str = time_str.replace(';', ':')
 
                 time_format = TIME_SHORT
                 if 'am' in time_str.lower() or 'pm' in time_str.lower():
@@ -68,25 +115,6 @@ def load_data_year(year, book):
                         report_label, time_str))
                     time = None
 
-                # try:
-                #     time = datetime.strptime(time_str, '%H:%M').time()
-                # except (ValueError, TypeError):
-                #     # Try with seconds
-                #     try:
-                #         time = datetime.strptime(time_str, '%H:%M:%S').time()
-                #     except (ValueError, TypeError):
-                #         logger.error('%s: Very Bad timestamp: %s' % (
-                #             report_label, time_str))
-                #         time = None
-            # elif type(time_str) is datetime:
-            #     logger.warning('Time column is already a datetime object!')
-            #     time = time_str
-            # else:
-            #     logger.warning('Unknown data type in time column! %s' % time_str)
-            #     time = None
-            # logger.error('%s: Bad timestamp: %s' % (
-            #     report_label, time_str))
-            # continue
         else:
             logger.warning('Time field is null/empty')
             time = None
@@ -97,7 +125,6 @@ def load_data_year(year, book):
                 spill_date = spill_date.replace(hour=time.hour, minute=time.minute)
             except:
                 logger.warning('Time is empty or invalid')
-
 
         vessel_name = row[4].value
         pollutant_details = row[5].value
@@ -118,32 +145,42 @@ def load_data_year(year, book):
             logger.error('%s: Invalid longitude: "%s" ' % (report_label, longitude))
             longitude = None
 
-        # if type(latitude) is not float:
-        #     logger.error('%s: Invalid latitude: "%s" ' % (report_label, latitude))
-        #     latitude = None
-        # if type(longitude) is not float:
-        #     logger.error('%s: Invalid longitude: "%s" ' % (report_label, longitude))
-        #     longitude = None
-
-        additional_info = row[9].value
+        vessel_additional_info = row[9].value
         er_region = row[10].value
         response_activated = row[11].value
         fleet_tasking = row[12].value
         station_or_ship = row[13].value
         unit = row[14].value
 
-        logger.info('%s %s %s %s' % (report_num, report_name, spill_date, time_str))
-        # logger.info(report_num)
+        # The following needs an app context
+        with app.app_context():
+            # Make a SpillReport object
+            sr = SpillReport(
+                # Add required fields
+                last_updated=datetime.now(), recorded_by='CCG Legacy', user_id=0,
+                report_num=report_num, report_name=report_name, spill_date=spill_date,
+                vessel_name=vessel_name, pollutant_details=pollutant_details,
+                pollutant=pollutant, latitude=latitude, longitude=longitude,
+                vessel_additional_info=vessel_additional_info, er_region=er_region,
+                response_activated=response_activated, fleet_tasking=fleet_tasking,
+                station_or_ship=station_or_ship, unit=unit)
 
-        # for cell in row:
-        #     print(cell.value)
+            try:
+                db.session.add(sr)
+                db.session.commit()
+                logger.info('Saved to db:: %s %s %s %s' % (report_num, report_name, spill_date, time_str))
+            except:
+                logger.error(format_exc())
+
+    logger.info('Finished loading %s' % year)
 
 
 def main():
-    legacy = os.path.join(settings.upload_root, '2021-02-11_Legacy_Polreps.xlsx')
+    # legacy = os.path.join(settings.upload_root, '2021-02-11_Legacy_Polreps.xlsx')
     # open_legacy_file(legacy)
     # load_data_year('2017', legacy)
-    load_data_all(legacy)
+    # load_data_all(legacy)
+    logger.warning('DO NOT RUN LEGACY POLREP LOADER FROM HERE! Only use util_scripts.py')
 
 
 if __name__ == '__main__':

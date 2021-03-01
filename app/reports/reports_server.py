@@ -3,11 +3,13 @@ from flask_login import current_user
 from werkzeug.utils import secure_filename
 import os
 
+
+import settings
 from app.reports import excel_export
 from app.reports import reports_db as db
 from app.reports.reports_db import SpillReport
-import settings
 from app.utils import notifications, lookups
+from app.geodata import postgis_db
 
 
 logger = settings.setup_logger(__name__)
@@ -43,6 +45,49 @@ def reports_all():
     reports_list = db.list_all_reports()
     return render_template('reports_list.html',
                            reports_list=reports_list)
+
+
+def add_leaflet_popups(mapview_reports):
+    """
+    Adds a rendered leaflet popup to each mapview report item
+    :param mapview_reports:
+    :return:
+    """
+    reports = []
+    for spill in mapview_reports:
+        # Add rendered popup for Leaflet
+        spill = db.null_to_empty_string(spill)
+        spill['popup'] = render_template('snippets/_report_map_sample.html',
+                                         spill=spill)
+        reports.append(spill)
+    return reports
+
+
+@rep.route('/map', methods=['GET'])
+def reports_map():
+    return render_template('reports_map.html')
+
+
+@rep.route('/map_search', methods=['POST'])
+def reports_map_search():
+    data = request.json
+    mapview_reports = postgis_db.get_reports_bbox(
+        data.get('lon_min'), data.get('lat_min'),
+        data.get('lon_max'), data.get('lat_max')
+    )
+    mapview_reports = add_leaflet_popups(mapview_reports)
+    return jsonify(success=True, data=mapview_reports), 200
+
+
+@rep.route('/render_map_samples', methods=['POST'])
+def render_map_samples():
+    spills = request.json
+    spills_display = []
+    for sp in spills:
+        spills_display.append(db.null_to_empty_string(sp))
+    rendered = render_template('snippets/_report_map_samples_all.html',
+                               spills=spills_display)
+    return jsonify(success=True, data=rendered), 200
 
 
 @rep.route('/search/<query_text>', methods=['GET'])

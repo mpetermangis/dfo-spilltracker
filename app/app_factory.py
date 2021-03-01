@@ -10,6 +10,7 @@ https://stackoverflow.com/a/64680953
 
 from flask import Flask, render_template
 from flask_security import Security, login_required
+from flask_mail import Mail
 from flask_login import current_user
 from flask_cors import CORS
 from flask_security.forms import RegisterForm, Required
@@ -20,7 +21,7 @@ import settings
 from app.user import user_datastore
 from app.database import db
 from app.reports.reports_server import rep
-from app.geodata import coord_converter
+from app.geodata import coord_converter, postgis_db
 from app.geodata.coord_converter import geo
 from app.admin.admin_server import adm
 from app.reports.reports_db import SpillReport
@@ -101,9 +102,13 @@ def create_app(register_blueprints=True):
     class ExtendedRegisterForm(RegisterForm):
         staff_name = StringField('Full Name', [Required()])
 
-    # Apply Flask-Security to the app
+    # Initialize Flask-Security in the app
     Security(app, user_datastore,
              register_form=ExtendedRegisterForm)
+
+    # Initialize Flask-Mail in the app
+    # don't need the returned mail = object
+    Mail(app)
 
     # All of the following must be done within an app context
     with app.app_context():
@@ -119,8 +124,8 @@ def create_app(register_blueprints=True):
             user_datastore.find_or_create_role(name='user', description='CCG User')
             user_datastore.find_or_create_role(name='observer', description='Observer with read-only access')
 
-            if settings.PROD_SERVER:
-                coord_converter.create_map_view()
+            # if settings.PROD_SERVER:
+            postgis_db.create_map_view()
 
             # user_tables.userdb.session.commit()
             db.session.commit()
@@ -140,7 +145,7 @@ def create_app(register_blueprints=True):
         app.register_blueprint(adm)
 
         # Add search index for reports
-        logger.info('Adding index for SpillReport...')
+        logger.info('Adding whoosh fulltext index for SpillReport...')
         wa.search_index(app, SpillReport)
         # wa.create_index(app, SpillReport)
 

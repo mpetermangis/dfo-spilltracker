@@ -13,9 +13,12 @@ import jinja2
 import settings
 
 # For rendering HTML templates
-templateLoader = jinja2.FileSystemLoader(searchpath='./app/templates')
-env = jinja2.Environment(loader=templateLoader)
-email_template = env.get_template('report_email.html')
+try:
+    templateLoader = jinja2.FileSystemLoader(searchpath='./app/templates')
+    env = jinja2.Environment(loader=templateLoader)
+    email_template = env.get_template('report_email.html')
+except:
+    pass
 
 logger = settings.setup_logger(__name__)
 

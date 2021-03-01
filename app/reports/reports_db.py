@@ -36,7 +36,13 @@ ORDER BY report_num, last_updated DESC;
 class SpillReport(db.Model):
 
     __tablename__ = "spill_reports"
-    __searchable__ = ['report_num', 'report_name', 'update_text']
+    __searchable__ = ['report_num', 'report_name', 'update_text', 'name_reporter',
+                      'phone_reporter', 'email_reporter', 'location_description',
+                      'pollutant', 'pollutant_details', 'quantity', 'quantity_units',
+                      'colour_odour', 'origin', 'weather', 'situation_info',
+                      'vessel_name', 'call_sign', 'vessel_type', 'owner_agent',
+                      'vessel_additional_info', 'er_region']
+
     __analyzer__ = StemmingAnalyzer()
 
     # Internal fields, not necessarily part of Spill Report schema
@@ -227,11 +233,15 @@ def list_all_reports():
     """
     # session = Session()
     # results = session.query(SpillReport).all()
+    logger.info('Querying all reports...')
     results = SpillReport.query.all()
     # session.close()
     reports_all = {}
+    logger.info('Preparing %s reports for display' % len(results))
     for res in results:
         report = result_to_dict(res)
+        # Convert None to empty string
+        report = null_to_empty_string(report)
         # Check if this report_num is already in dict
         report_num = report.get('report_num')
         if report_num not in reports_all:
@@ -244,6 +254,7 @@ def list_all_reports():
                 reports_all[report_num] = report
     reports_list = list(reports_all.values())
     reports_list = sorted(reports_list, key=lambda i: i['last_updated'], reverse=True)
+    logger.info('Report list is ready')
     return reports_list
 
 
@@ -318,23 +329,24 @@ def get_report_for_display(report_num, ts_url=None):
     final_report = get_report(report_num, ts_url)
     if not final_report:
         return None
-    # session = Session()
 
     # Get user's full name from user_id
     user = User.query.filter(User.id == final_report.get('user_id')).first()
     if user:
         final_report['recorded_by'] = user.staff_name
     else:
-        final_report['recorded_by'] = 'Unknown User'
-    # session.close()
+        # Try to get name from recorded_by field (e.g. legacy reports)
+        recorded_by = final_report.get('recorded_by')
+        if recorded_by:
+            final_report['recorded_by'] = recorded_by
+        else:
+            final_report['recorded_by'] = 'Unknown User'
 
-    # Convert None to empty string for display
-    display_report = null_to_empty_string(final_report)
-    display_report = format_timestamps(display_report)
+    final_report = format_timestamps(final_report)
 
     # Add attachments
     attachments = get_attachments(report_num)
-    display_report['attachments'] = attachments
+    final_report['attachments'] = attachments
 
     # Add coordinate regex and placeholder
     coord_type = final_report.get('coordinate_type')
@@ -351,9 +363,12 @@ def get_report_for_display(report_num, ts_url=None):
         coord_pattern = '\d{2} \d{1,2} \d{1,2} [Nn] \d{2,3} \d{1,2} \d{1,2} [Ww]'
         coord_placeholder = 'XX XX XX N XXX XX XX W'
 
-    display_report['coord_pattern'] = coord_pattern
-    display_report['coord_placeholder'] = coord_placeholder
-    display_report['coord_help'] = coord_help + coord_placeholder
+    final_report['coord_pattern'] = coord_pattern
+    final_report['coord_placeholder'] = coord_placeholder
+    final_report['coord_help'] = coord_help + coord_placeholder
+
+    # Convert all None fields to empty string for display
+    display_report = null_to_empty_string(final_report)
     logger.info('Got report: %s' % display_report)
     return display_report
 

@@ -141,7 +141,7 @@ Edit the .env file and add the following env vars:
 
 `SPILL_TRACKER_DB_URL=postgresql://spilluser:<password>@localhost/spilldb`
 
-Open a python console and create salt and secret for the DB logins. In python create a different random string for each of the env vars below: 
+Open a python console and create salt and secret for the DB logins. In python create a different random string for each of the env vars below:
 
 secrets.token_urlsafe(16)
 

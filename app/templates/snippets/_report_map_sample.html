@@ -1,0 +1,26 @@
+
+    
+    <table class=" mb-0">
+    <thead>
+        <tr>
+            <th>Report:</td>
+            <th><a href="{{ url_for('report.show_report', report_num=spill.report_num) }}" target="_blank">{{ spill.report_name }}</a></td>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Pollutant</td>
+            <td>{{ spill.pollutant }}</td>
+        </tr>
+        <tr>
+            <td>Quantity</td>
+            <td>{{ spill.quantity }}</td>
+        </tr>
+        <tr>
+            <td>Quantity Units</td>
+            <td>{{ spill.quantity_units }}</td>
+        </tr>
+        {# <div class="col-sm">Report Name</div> #}
+    </tbody>
+    </table>
+
