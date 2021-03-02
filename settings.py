@@ -1,10 +1,15 @@
-import os
+# Bootstrap project root
 import sys
+import os
+from dotenv import load_dotenv
+load_dotenv()
+POLREP_ROOT = os.environ.get('POLREP_ROOT')
+print('Adding root to sys.path: %s' % POLREP_ROOT)
+sys.path.extend([POLREP_ROOT])
+
 from datetime import datetime
 import logging
 import socket
-from dotenv import load_dotenv
-load_dotenv()
 
 
 def dev_machine():
@@ -43,6 +48,8 @@ logger = setup_logger(__name__)
 # Notifications disabled by default, unless enabled in .env
 NOTIFY_EMAILS = os.environ.get('NOTIFY_EMAILS', False)
 logger.info('Email notifications set to: %s' % NOTIFY_EMAILS)
+
+WHOOSH_INDEX = os.path.join(POLREP_ROOT, '.indexes')
 
 base_dir = os.path.dirname(os.path.realpath(__file__))
 upload_root = os.path.join(base_dir, 'uploads')

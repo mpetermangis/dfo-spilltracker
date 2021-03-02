@@ -71,6 +71,8 @@ def create_app(register_blueprints=True):
     # SQLALCHEMY_TRACK_MODIFICATIONS must be enabled for flask-whooshalchemy3
     # fulltext search. If disabled, it will NOT propagate updates to the search index.
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
+    app.config['WHOOSH_INDEX_PATH'] = settings.WHOOSH_INDEX
+    logger.info('WHOOSH_INDEX_PATH set to: %s' % settings.WHOOSH_INDEX)
 
     # Flask-Security optionally sends email notification to users upon registration, password reset, etc.
     # It uses Flask-Mail behind the scenes.

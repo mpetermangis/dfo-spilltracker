@@ -160,6 +160,10 @@ def load_data_year(year, book):
 
         # The following needs an app context
         with app.app_context():
+            # import flask_whooshalchemy as wa
+            # logger.info('Adding whoosh fulltext index from app_context WITHIN polrep_loader')
+            # wa.search_index(app, SpillReport)
+
             # Make a SpillReport object
             sr = SpillReport(
                 # Add required fields
