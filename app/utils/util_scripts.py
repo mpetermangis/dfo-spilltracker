@@ -8,7 +8,6 @@ logger = settings.setup_logger(__name__)
 def main():
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('dataset', type=str, help='ID of dataset to update')
     parser.add_argument('--legacy', action='store_true',
                         help='Load legacy POLREPs from settings.upload_root')
     legacy_file = os.path.join(settings.upload_root, '2021-02-11_Legacy_Polreps.xlsx')

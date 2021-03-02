@@ -1,0 +1,11 @@
+<p>{{ _('Welcome %(email)s!', email=user.email) }}</p>
+
+<h3>This email confirms your registration for the CCG/DFO POLREP service.</h3>
+
+<p>Thank you for registering for the CCG/DFO POLREP service.  You can access reports at the following URL: <a href="https://marinepollution.ca/report">https://marinepollution.ca/report</a>.</p>
+
+{% if security.confirmable %}
+<p>{{ _('You can confirm your email through the link below:') }}</p>
+
+<p><a href="{{ confirmation_link }}">{{ _('Confirm my account') }}</a></p>
+{% endif %}

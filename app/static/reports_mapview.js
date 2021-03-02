@@ -75,7 +75,7 @@ function getReportsBbox(){
         var spill5 = spillData.slice(0, 5)
         var spill5Str = JSON.stringify(spill5)
         // Get rendered template from Flask, set HTML content
-        console.log(`Render samples for 5 spills: ${spill5Str}`)
+        // console.log(`Render samples for 5 spills: ${spill5Str}`)
         // var result = 
         var spillSampleData = $.post({
             url: frontendHost + '/report/render_map_samples', 

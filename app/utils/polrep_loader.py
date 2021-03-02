@@ -54,7 +54,6 @@ def create_report_map_tbl():
     engine.execute(add_geo_index)
 
 
-
 def load_data_all(legacy_file):
 
     erase_all_reports()
@@ -72,7 +71,7 @@ def load_data_year(year, book):
 
     logger.info('POLREPS for %s...' % year)
     year_ws = book[year]
-    for row in year_ws.iter_rows(min_row=2):  # , max_row=2
+    for i, row in enumerate(year_ws.iter_rows(min_row=2)):  # , max_row=2
         report_num = row[0].value
         if report_num is None:
             # Probably end of the table
@@ -126,6 +125,13 @@ def load_data_year(year, book):
             except:
                 logger.warning('Time is empty or invalid')
 
+        # Use spill date for last updated, if it is a valid datetime
+        if type(spill_date) is datetime:
+            last_updated = spill_date
+        else:
+            logger.warning('Spill date is invalid, using current date.')
+            last_updated = datetime.now()
+
         vessel_name = row[4].value
         pollutant_details = row[5].value
         pollutant = row[6].value
@@ -157,7 +163,7 @@ def load_data_year(year, book):
             # Make a SpillReport object
             sr = SpillReport(
                 # Add required fields
-                last_updated=datetime.now(), recorded_by='CCG Legacy', user_id=0,
+                last_updated=last_updated, recorded_by='CCG Legacy', user_id=0,
                 report_num=report_num, report_name=report_name, spill_date=spill_date,
                 vessel_name=vessel_name, pollutant_details=pollutant_details,
                 pollutant=pollutant, latitude=latitude, longitude=longitude,
@@ -167,10 +173,21 @@ def load_data_year(year, book):
 
             try:
                 db.session.add(sr)
+                logger.info('Added to db session: %s %s %s %s' % (report_num, report_name, spill_date, time_str))
                 db.session.commit()
-                logger.info('Saved to db:: %s %s %s %s' % (report_num, report_name, spill_date, time_str))
+                # if i % 100 == 0:
+                #     db.session.commit()
+                #     logger.info('Commit %s' % i)
             except:
                 logger.error(format_exc())
+
+    # Commit any remaining rows
+    # with app.app_context():
+    #     try:
+    #         db.session.commit()
+    #         logger.info('Committed all remaining reports.')
+    #     except:
+    #         logger.error(format_exc())
 
     logger.info('Finished loading %s' % year)
 
