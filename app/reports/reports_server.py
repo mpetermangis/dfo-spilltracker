@@ -16,11 +16,6 @@ logger = settings.setup_logger(__name__)
 
 rep = Blueprint('report', __name__, url_prefix='/report')
 
-NOTIFY_EMAILS = False
-# Enable emails on prod
-if settings.PROD_SERVER:
-    NOTIFY_EMAILS = True
-
 
 # All endpoints in this blueprint require user to be logged in
 @rep.before_request
@@ -108,7 +103,7 @@ def report_search(query_text):
 @rep.route('/export/<report_num>', methods=['GET'])
 def export_excel(report_num, timestamp=None):
     # Export to Excel template, with a timestamp version if needed
-    report = db.get_report(report_num, timestamp)
+    report, last_report = db.get_report(report_num, timestamp)
     export_file = excel_export.report_to_excel(report)
     return send_file(export_file,
                      as_attachment=True,
@@ -133,19 +128,22 @@ def show_report(report_num, timestamp=None):
     report_timestamps = db.get_timestamps(report_num)
     return render_template('report.html',
                            report=final_report,
-                           # marker_drag=False,
                            timestamps=report_timestamps)
 
 
 @rep.route('/new', methods=['GET'])
 def new_report():
     # Display the report form template, keep it blank (no data)
+    # Set default report date to current date
+    from datetime import datetime
+    report_date = datetime.now().strftime(settings.html_timestamp)
+    report = {'report_date_html': report_date}
     return render_template('report_form.html',
                            report_num=None,
+                           report=report,
                            action='New',
-                           lookups=lookups.lu,
-                           # marker_drag=True,
-                           report={})
+                           lookups=lookups.lu
+                           )
 
 
 @rep.route('/<report_num>/update', methods=['GET'])
@@ -180,25 +178,44 @@ def save_report_data():
         data = data.to_dict()
 
     # Handle files if attached
-    # report_num = data.get('report_num')
     attachments = save_attachments_to_disk(request)
 
     # Add attachments and user id before saving to DB
     data['attachments'] = attachments
     data['user_id'] = current_user.id
-    report_num, success, status = db.save_report_data(data)
+    report_data, success, status = db.save_report_data(data)
+    report_num = report_data.get('report_num')
     if success:
         logger.info('Saved OK, redirect to show_report: %s' % report_num)
+
         # Send notification email here
-        if not settings.NOTIFY_EMAILS:
-            logger.warning('Email notifications disabled in test environment!')
-        else:
-            report_name = data.get('report_name')
-            notifications.notify_report_update(report_num, report_name)
+        msg_content, msg_subject = prepare_report_email(report_data)
+        notifications.notify_report(msg_content, msg_subject)
         return redirect(url_for('report.show_report', report_num=report_num))
     else:
         resp = jsonify(success=False, msg=status)
     return resp
+
+
+def prepare_report_email(report):
+    """
+    Render the HTML email subject line and content for an update message.
+    :param report_num:
+    :param report_name:
+    :return: rendered HTML
+    """
+    msg_content = render_template('report_email.html', report=report)
+    version_count = report.get('version_count')
+    report_num = report.get('report_num')
+    report_name = report.get('report_name')
+    if version_count > 0:
+        # This is an update
+        msg_subject = 'UPDATE #%s - %s - %s' % (
+            version_count, report_num, report_name)
+    else:
+        # This is a new report
+        msg_subject = '%s - %s' % (report_num, report_name)
+    return msg_content, msg_subject
 
 
 # Handle file uploads

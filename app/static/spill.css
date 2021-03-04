@@ -60,6 +60,10 @@
     padding: 0 !important;
 }
 
+.spill-diff {
+    padding: .25rem 0.75rem !important;
+}
+
 #report_map_leaflet {
     height: 600px;
     /* width: 80%; */

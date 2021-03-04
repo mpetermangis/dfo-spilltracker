@@ -56,6 +56,10 @@ def create_report_map_tbl():
 
 def load_data_all(legacy_file):
 
+    # Turn off emails before loading data
+    settings.NOTIFY_EMAILS = False
+    logger.warning('Email notifications are disabled! NOTIFY_EMAILS: %s' % settings.NOTIFY_EMAILS)
+
     erase_all_reports()
 
     logger.info('Opening: %s' % legacy_file)
@@ -179,19 +183,8 @@ def load_data_year(year, book):
                 db.session.add(sr)
                 logger.info('Added to db session: %s %s %s %s' % (report_num, report_name, spill_date, time_str))
                 db.session.commit()
-                # if i % 100 == 0:
-                #     db.session.commit()
-                #     logger.info('Commit %s' % i)
             except:
                 logger.error(format_exc())
-
-    # Commit any remaining rows
-    # with app.app_context():
-    #     try:
-    #         db.session.commit()
-    #         logger.info('Committed all remaining reports.')
-    #     except:
-    #         logger.error(format_exc())
 
     logger.info('Finished loading %s' % year)
 

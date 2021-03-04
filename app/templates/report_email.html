@@ -1,18 +1,22 @@
 <html>
 <head></head>
 <body>
-  <h2>Pollution Report Update - {{ report_num }}</h2>
+  <h2>{{ report.report_num }} - {{ report.report_name }}</h2>
   <p>
-    The following pollution report was updated:
-    <br>
-    {{ report_title }} ({{ report_num }})
+    {% if report.version_count == 0 %}
+      The Canadian Coast Guard has created a POLREP on {{ report.report_date }} for an incident in {{ report.location_description }}. <a href="https://marinepollution.ca/report/{{ report.report_num }}">Click here</a> for a detailed description of the incident.
+    {% else %}
+      The Canadian Coast Guard has updated a POLREP originally published on {{ report.report_date }} for an incident in {{ report.location_description }}. <a href="https://marinepollution.ca/report/{{ report.report_num }}">Click here</a> for a detailed description of the incident.
+    {% endif %}
+    {# <br>
+    {{ report_title }} ({{ report_num }}) #}
   </p>
-  <p>
+  {# <p>
     For details, please see the report page: 
     <br>
     <a href="https://marinepollution.ca/report/{{ report_num }}">
       https://marinepollution.ca/report/{{ report_num }}</a>
-  </p>
+  </p> #}
   <p>
     This notification was automatically sent from the DFO/CCG Spill Tracker at https://marinepollution.ca. Do not reply to this message. 
   </p>

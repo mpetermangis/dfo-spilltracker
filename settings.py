@@ -47,9 +47,16 @@ logger = setup_logger(__name__)
 
 # Notifications disabled by default, unless enabled in .env
 NOTIFY_EMAILS = os.environ.get('NOTIFY_EMAILS', False)
+try:
+    NOTIFY_EMAILS = bool(NOTIFY_EMAILS)
+except:
+    logger.warning('Cannot parse env var NOTIFY_EMAILS as boolean')
+    NOTIFY_EMAILS = False
 logger.info('Email notifications set to: %s' % NOTIFY_EMAILS)
 
 WHOOSH_INDEX = os.path.join(POLREP_ROOT, '.indexes')
+
+DEFAULT_UPDATE_LIST = ['mpetermangis@gmail.com', 'Nicholas.Benoy@dfo-mpo.gc.ca']
 
 base_dir = os.path.dirname(os.path.realpath(__file__))
 upload_root = os.path.join(base_dir, 'uploads')

@@ -21,8 +21,17 @@ def create_map_view():
     ''' % REPORT_SRID)
 
 
-# Update report_map_tbl when a spill report is updated
-# Delete and insert the latest record for a given report_num
+def update_report_map(report_num):
+    # Update report_map_tbl when a spill report is updated
+    # Delete and insert the latest record for a given report_num
+    logger.info('Updating report map table: %s' % report_num)
+    sql_delete = "delete from report_map_tbl where report_num='%s';" % report_num
+    engine.execute(sql_delete)
+    sql_insert = """ insert into report_map_tbl 
+                    select * from report_map_view rmv 
+                    where report_num='%s'
+                    """ % report_num
+    engine.execute(sql_insert)
 
 
 # Get spill reports using a bounding box

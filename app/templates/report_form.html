@@ -47,7 +47,12 @@
             <small id="reportNameHelp" class="form-text text-muted">Enter a unique, short name for this report.</small>
     </div>
 
-    <div class="form-group" {# Hide this field if a New report #}
+    {# Add hidden recorded by field, for Legacy reports that don't have a real user_id #}
+    <input class="spilldata" type="hidden" id="recorded_by" name="recorded_by" 
+        value="{{ report.recorded_by}}">
+
+    {# Hide this field if a New report #}
+    <div class="form-group">
         {% if action == 'New' %} style="display:none" 
         {% endif %}>
         <label for="update_text">Update Text</label>

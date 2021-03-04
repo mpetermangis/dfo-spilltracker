@@ -24,14 +24,14 @@ logger = settings.setup_logger(__name__)
 
 # Replace sender@example.com with your "From" address.
 # This address must be verified.
-# SENDER = 'mpetermangis@gmail.com'
 SENDER = 'updates@marinepollution.ca'
 SENDERNAME = 'Notification Service - marinepollution.ca'
 
 # Replace recipient@example.com with a "To" address. If your account
 # is still in the sandbox, this address must be verified.
 # RECIPIENTS = ['mpetermangis@gmail.com', 'Nicholas.Benoy@dfo-mpo.gc.ca']
-RECIPIENTS = ['mpetermangis@gmail.com']
+# RECIPIENTS = ['mpetermangis@gmail.com']
+RECIPIENTS = settings.DEFAULT_UPDATE_LIST
 
 # Replace smtp_username with your Amazon SES SMTP user name.
 USERNAME_SMTP = settings.smtp_user
@@ -96,6 +96,34 @@ def notify_report_update(report_num, report_name):
     msg.attach(part2)
 
     send_message(msg)
+
+
+def notify_report(msg_content, msg_subject):
+    """
+    Sends an HTML formatted email notification
+    :param msg_content:
+    :param msg_subject:
+    :return:
+    """
+    # Create message container - the correct MIME type is multipart/alternative.
+    msg = MIMEMultipart('alternative')
+    msg['Subject'] = msg_subject
+    msg['From'] = email.utils.formataddr((SENDERNAME, SENDER))
+    msg['To'] = ', '.join(RECIPIENTS)
+
+    # Record the MIME types of both parts - text/plain and text/html.
+    # part1 = MIMEText(BODY_TEXT, 'plain')
+    part_html = MIMEText(msg_content, 'html')
+
+    # According to RFC 2046, the last part of a multipart message, in this case
+    # the HTML message, is best and preferred.
+    # msg.attach(part1)
+    msg.attach(part_html)
+
+    if not settings.NOTIFY_EMAILS:
+        logger.warning('Email notifications disabled for testing!')
+    else:
+        send_message(msg)
 
 
 def send_message(msg):

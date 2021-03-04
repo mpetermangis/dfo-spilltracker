@@ -8,7 +8,7 @@ import traceback
 
 import settings
 from app.utils import lookups
-from app.geodata import coord_converter
+from app.geodata import coord_converter, postgis_db
 from app.user import User
 
 from app.database import db
@@ -281,22 +281,25 @@ def get_report(report_num, ts_url=None):
     :param ts_url: a timestamp in URL-safe format
     :return: spill report as a Python dict
     """
-    # session = Session()
+
     if not ts_url:
-        # Get the last (most recent version) of this report
-        result = SpillReport.query.filter(
+        # Get the latest (2 most recent versions) of this report
+        results = SpillReport.query.filter(
             SpillReport.report_num==report_num).order_by(
-            SpillReport.last_updated.desc()).first()
+                SpillReport.last_updated.desc()
+            ).limit(2).all()
+            # SpillReport.last_updated.desc()).first()
 
     else:
         # Get update at a specific timestamp
         # Convert ts_url to a timestamp object
         timestamp = datetime.strptime(ts_url, settings.filesafe_timestamp)
-        result = SpillReport.query.filter(
+        results = SpillReport.query.filter(
             SpillReport.report_num == report_num,
-            SpillReport.last_updated == timestamp).first()
-
-    # session.close()
+            SpillReport.last_updated <= timestamp).order_by(
+                SpillReport.last_updated.desc()
+            ).limit(2).all()
+            # SpillReport.last_updated == timestamp).first()
 
     """
     Most efficient setup is:
@@ -310,46 +313,30 @@ def get_report(report_num, ts_url=None):
     filter the results in regular python, outside of SQLalchemy. 
     """
 
-    if not result:
+    if not results:
         logger.warning('Report num %s does not exist!' % report_num)
         return None
 
-    final_report = result_to_dict(result)
-    return final_report
+    final_report = result_to_dict(results[0])
+    if len(results) < 2:
+        logger.warning('No previous report for %s' % report_num)
+        last_report = {}
+    else:
+        last_report = result_to_dict(results[1])
+
+    return final_report, last_report
 
 
-def get_report_for_display(report_num, ts_url=None):
+def format_coordinates(report):
     """
-    Retrieve a spill report and format it for display in an HTML template
-    :param report_num:
-    :param ts_url:
+    Set values of coordinates and placeholders for HTML form
+    :param report:
     :return:
     """
-
-    final_report = get_report(report_num, ts_url)
-    if not final_report:
-        return None
-
-    # Get user's full name from user_id
-    user = User.query.filter(User.id == final_report.get('user_id')).first()
-    if user:
-        final_report['recorded_by'] = user.staff_name
-    else:
-        # Try to get name from recorded_by field (e.g. legacy reports)
-        recorded_by = final_report.get('recorded_by')
-        if recorded_by:
-            final_report['recorded_by'] = recorded_by
-        else:
-            final_report['recorded_by'] = 'Unknown User'
-
-    final_report = format_timestamps(final_report)
-
-    # Add attachments
-    attachments = get_attachments(report_num)
-    final_report['attachments'] = attachments
-
-    # Add coordinate regex and placeholder
-    coord_type = final_report.get('coordinate_type')
+    # Add coordinate regex and placeholder, use default of Decimal Degrees
+    coord_type = report.get('coordinate_type')
+    if not coord_type:
+        coord_type = 'Decimal Degrees'
     coord_pattern = ''
     coord_placeholder = ''
     coord_help = 'Format: '
@@ -363,12 +350,90 @@ def get_report_for_display(report_num, ts_url=None):
         coord_pattern = '\d{2} \d{1,2} \d{1,2} [Nn] \d{2,3} \d{1,2} \d{1,2} [Ww]'
         coord_placeholder = 'XX XX XX N XXX XX XX W'
 
-    final_report['coord_pattern'] = coord_pattern
-    final_report['coord_placeholder'] = coord_placeholder
-    final_report['coord_help'] = coord_help + coord_placeholder
+    report['coord_pattern'] = coord_pattern
+    report['coord_placeholder'] = coord_placeholder
+    report['coord_help'] = coord_help + coord_placeholder
+    report['coordinate_type'] = coord_type
+    return report
 
+
+def set_user_name(report):
+    """
+    Get user name from DB and set fields for display
+    :param report:
+    :return:
+    """
+    # Get user's full name from user_id
+    user = User.query.filter(User.id == report.get('user_id')).first()
+    if user:
+        report['recorded_by'] = user.staff_name
+    else:
+        # Try to get name from recorded_by field (e.g. legacy reports)
+        recorded_by = report.get('recorded_by')
+        if recorded_by:
+            report['recorded_by'] = recorded_by
+        else:
+            report['recorded_by'] = 'Unknown User'
+    return report
+
+
+def format_for_display(report):
+    """
+    Format a report for display in web form
+    :param report:
+    :return:
+    """
+    report = set_user_name(report)
+    report = format_timestamps(report)
+    report = format_coordinates(report)
     # Convert all None fields to empty string for display
-    display_report = null_to_empty_string(final_report)
+    display_report = null_to_empty_string(report)
+    return display_report
+
+
+def get_diff(report, last_report):
+    """
+    Get the diff between two versions of a report
+    :param report:
+    :param last_report:
+    :return:
+    """
+    diff = {}
+    for key, value in report.items():
+        last_value = last_report.get(key)
+        if last_value != value:
+            # Change null/empty last values to a string markert
+            if not last_value:
+                last_value = '(empty)'
+            diff[key] = last_value
+
+    # Remove fields that we don't want to diff
+    diff.pop('id', None)
+    diff.pop('last_updated', None)
+    return diff
+
+
+def get_report_for_display(report_num, ts_url=None):
+    """
+    Retrieve a spill report and format it for display in an HTML template
+    :param report_num:
+    :param ts_url:
+    :return:
+    """
+
+    final_report, last_report = get_report(report_num, ts_url)
+    if not final_report:
+        return None
+
+    display_report = format_for_display(final_report)
+    last_report = format_for_display(last_report)
+    diff = get_diff(display_report, last_report)
+
+    # Add attachments
+    attachments = get_attachments(report_num)
+    display_report['attachments'] = attachments
+    display_report['diff'] = diff
+
     logger.info('Got report: %s' % display_report)
     return display_report
 
@@ -379,7 +444,7 @@ def get_timestamps(report_num):
     :param report_num:
     :return:
     """
-    # session = Session()
+
     timestamps = []
     # Return a copy in human-readable form, another in URL-safe form
     # results = SpillReport.query(SpillReport.last_updated).filter(SpillReport.report_num == report_num)
@@ -395,7 +460,7 @@ def get_timestamps(report_num):
             'ts_display': ts_display,
             'ts_ccg_format': ts_ccg_format
         })
-    # session.close()
+
     logger.info('Report timestamps: %s' % timestamps)
     return timestamps
 
@@ -475,13 +540,12 @@ def attachments_to_db(report_num, attachments):
 def save_report_data(report_data):
     """
     Saves a new report, or incremental update of an existing report.
-    If there is no spill_id/report_num, this is a completely NEW report.
+    If there is no report_num, this is a completely NEW report.
     In either case, we simply save all the data as-is.
     :param report_data:
     :return:
     """
     success = False
-    # session = Session()
 
     # Convert coordinates, if exists
     coordinate_type = report_data.get('coordinate_type')
@@ -528,28 +592,38 @@ def save_report_data(report_data):
     report_num = report_data.get('report_num')
     report_name = report_data.get('report_name')
     ts = now.strftime(settings.display_date_fmt)
+
+    # Number of versions of this report
+    version_count = 0
     if not report_num:
         # This is a New report
         report_num = get_next_polrep_num()
         report_data['report_num'] = report_num
         logger.info('Creating a NEW report with report #: %s' % report_num)
+        # new_flag = True
+
+    else:
+        # Query DB to get the count
+        version_count = db.session.query(SpillReport)\
+            .filter(SpillReport.report_num==report_num).count()
+        logger.info('There are already %s versions of this report' % version_count)
 
     logger.info('Updating spill report: %s (%s) at %s' % (
         report_name, report_num, ts))
     try:
-        # new_report = SpillReport(**report_data)
         db.session.add(SpillReport(**report_data))
         db.session.commit()
         success = True
+        # Update the report map in PostGIS
+        postgis_db.update_report_map(report_num)
     except (SQLAlchemyError, TypeError):
         logger.error(traceback.format_exc())
-    # finally:
-    #     session.close()
 
     # Handle attachments
     if attachments:
         attachments_to_db(report_num, attachments)
-    return report_num, success, 'OK'
+    report_data['version_count'] = version_count
+    return report_data, success, 'OK'
 
 
 def main():

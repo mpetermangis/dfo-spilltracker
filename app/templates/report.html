@@ -21,24 +21,25 @@
 <div class="row mb-3" id="reportView">
     <div class="col-9">
         <h3>Report Data</h3>
+        <p class="mt-3 mb-3">Note: any fields that are <span class="alert alert-danger spill-diff">highlighted</span> have been updated in this version of the report.  Hover your mouse over the highlight to see the previous content of this field. 
         <h5>General Information:</h5>
         <p>Last Updated: {{ report.last_updated_ccg }}</p>
         <p>Report #: {{ report.report_num }}</p>
-        <p>Report Name: {{ report.report_name }}</p>
-        <p>Update Text: {{ report.update_text }}</p>
-        <p>Last Updated By: {{ report.recorded_by }}</p>
+        <p {% if report.diff.report_name %}class="alert alert-danger spill-diff" title="Last value: {{ report.diff.report_name }}" {% endif %}>Report Name: {{ report.report_name }}</p>
+        <p {% if report.diff.update_text %}class="alert alert-danger spill-diff" title="Last value: {{ report.diff.update_text }}" {% endif %}>Update Text: {{ report.update_text }}</p>
+        <p {% if report.diff.recorded_by %}class="alert alert-danger spill-diff" title="Last value: {{ report.diff.recorded_by }}" {% endif %}>Last Updated By: {{ report.recorded_by }}</p>
         {# Timezone: #}
-        <p>Report Date: {{ report.report_date_ccg }} {{ report.report_tz_ccg }}</p>
-        <p>Spill Date: {{ report.spill_date_ccg }} {{ report.spill_tz_ccg }}</p>
+        <p {% if report.diff.report_date_ccg %}class="alert alert-danger spill-diff" title="Last value: {{ report.diff.report_date_ccg }}" {% endif %}>Report Date: {{ report.report_date_ccg }} {{ report.report_tz_ccg }}</p>
+        <p {% if report.diff.spill_date_ccg %}class="alert alert-danger spill-diff" title="Last value: {{ report.diff.spill_date_ccg }}" {% endif %}>Spill Date: {{ report.spill_date_ccg }} {{ report.spill_tz_ccg }}</p>
         <hr>
         <h5>Reporter:</h5>
-        <p>Name: {{ report.name_reporter }}</p>
-        <p>Phone: {{ report.phone_reporter }}</p>
-        <p>Email: {{ report.email_reporter }}</p>
+        <p {% if report.diff.name_reporter %}class="alert alert-danger spill-diff" title="Last value: {{ report.diff.name_reporter }}" {% endif %}>Name: {{ report.name_reporter }}</p>
+        <p {% if report.diff.phone_reporter %}class="alert alert-danger spill-diff" title="Last value: {{ report.diff.phone_reporter }}" {% endif %}>Phone: {{ report.phone_reporter }}</p>
+        <p {% if report.diff.email_reporter %}class="alert alert-danger spill-diff" title="Last value: {{ report.diff.email_reporter }}" {% endif %}>Email: {{ report.email_reporter }}</p>
         <hr>
         <h5>Situation Details:</h5>
-        <p>Location/Position Coordinates Type: {{ report.coordinate_type }}</p>
-        <p>Coordinates: {{ report.coordinates }}</p>
+        <p {% if report.diff.coordinate_type %}class="alert alert-danger spill-diff" title="Last value: {{ report.diff.coordinate_type }}" {% endif %}>Location/Position Coordinates Type: {{ report.coordinate_type }}</p>
+        <p {% if report.diff.coordinates %}class="alert alert-danger spill-diff" title="Last value: {{ report.diff.coordinates }}" {% endif %}>Coordinates: {{ report.coordinates }}</p>
 
         {# Show map only if report has coordinates #}
         {% if report.latitude and report.longitude %}
@@ -47,37 +48,37 @@
         {# Set values for lat-lon in HTML data #}
         <div id="coordInfo" data-latitude="{{ report.latitude }}" data-longitude="{{ report.longitude }}" data-markerdrag=""></div>
         
-        <p>Location Description: {{ report.location_description }}</p>
-        <p>Pollutant: {{ report.pollutant }}</p>
-        <p>Quantity: {{ report.quantity }}</p>
-        <p>Quantity units: {{ report.quantity_units }}</p>
-        <p>Colour and odour: {{ report.colour_odour }}</p>
-        <p>Origin: {{ report.origin }}</p>
-        <p>Weather: {{ report.weather }}</p>
-        <p>Additional Info: {{ report.situation_info }}</p>
-        <p>Response Activated: {{ report.response_activated }}</p>
+        <p {% if report.diff.location_description %}class="alert alert-danger spill-diff" title="Last value: {{ report.diff.location_description }}" {% endif %}>Location Description: {{ report.location_description }}</p>
+        <p {% if report.diff.pollutant %}class="alert alert-danger spill-diff" title="Last value: {{ report.diff.pollutant }}" {% endif %}>Pollutant: {{ report.pollutant }}</p>
+        <p {% if report.diff.quantity %}class="alert alert-danger spill-diff" title="Last value: {{ report.diff.quantity }}" {% endif %}>Quantity: {{ report.quantity }}</p>
+        <p {% if report.diff.quantity_units %}class="alert alert-danger spill-diff" title="Last value: {{ report.diff.quantity_units }}" {% endif %}>Quantity units: {{ report.quantity_units }}</p>
+        <p {% if report.diff.colour_odour %}class="alert alert-danger spill-diff" title="Last value: {{ report.diff.colour_odour }}" {% endif %}>Colour and odour: {{ report.colour_odour }}</p>
+        <p {% if report.diff.origin %}class="alert alert-danger spill-diff" title="Last value: {{ report.diff.origin }}" {% endif %}>Origin: {{ report.origin }}</p>
+        <p {% if report.diff.weather %}class="alert alert-danger spill-diff" title="Last value: {{ report.diff.weather }}" {% endif %}>Weather: {{ report.weather }}</p>
+        <p {% if report.diff.situation_info %}class="alert alert-danger spill-diff" title="Last value: {{ report.diff.situation_info }}" {% endif %}>Additional Info: {{ report.situation_info }}</p>
+        <p {% if report.diff.response_activated %}class="alert alert-danger spill-diff" title="Last value: {{ report.diff.response_activated }}" {% endif %}>Response Activated: {{ report.response_activated }}</p>
         <hr>
         <h5>Vessel information:</h5>
-        <p>Vessel Name: {{ report.vessel_name }}</p>
-        <p>Call Sign and MMSI: {{ report.call_sign }}</p>
-        <p>Overall Length (LOA): {{ report.vessel_length }}</p>
-        <p>Vessel Type: {{ report.vessel_type }}</p>
-        <p>Owner/Agent/Flag: {{ report.owner_agent }}</p>
-        <p>Vessel Additional Info: {{ report.vessel_additional_info }}</p>
+        <p {% if report.diff.vessel_name %}class="alert alert-danger spill-diff" title="Last value: {{ report.diff.vessel_name }}" {% endif %}>Vessel Name: {{ report.vessel_name }}</p>
+        <p {% if report.diff.call_sign %}class="alert alert-danger spill-diff" title="Last value: {{ report.diff.call_sign }}" {% endif %}>Call Sign and MMSI: {{ report.call_sign }}</p>
+        <p {% if report.diff.vessel_length %}class="alert alert-danger spill-diff" title="Last value: {{ report.diff.vessel_length }}" {% endif %}>Overall Length (LOA): {{ report.vessel_length }}</p>
+        <p {% if report.diff.vessel_type %}class="alert alert-danger spill-diff" title="Last value: {{ report.diff.vessel_type }}" {% endif %}>Vessel Type: {{ report.vessel_type }}</p>
+        <p {% if report.diff.owner_agent %}class="alert alert-danger spill-diff" title="Last value: {{ report.diff.owner_agent }}" {% endif %}>Owner/Agent/Flag: {{ report.owner_agent }}</p>
+        <p {% if report.diff.vessel_additional_info %}class="alert alert-danger spill-diff" title="Last value: {{ report.diff.vessel_additional_info }}" {% endif %}>Vessel Additional Info: {{ report.vessel_additional_info }}</p>
         <hr>
         <h5>Alert List:</h5>
-        <p>CCG-W ER Duty Officer: {{ report.ccg_duty_officer }}</p>
-        <p>TC marine Safety - Vancouver: {{ report.tc_marine_safety }}</p>
-        <p>Vancouver HM: {{ report.vancouver_hm }}</p>
-        <p>Area MCTS Centre: {{ report.area_mcts_centre }}</p>
-        <p>DFO Public Affairs: {{ report.dfo_public_affairs }}</p>
-        <p>ROC Officer: {{ report.roc_officer }}</p>
+        <p {% if report.diff.ccg_duty_officer %}class="alert alert-danger spill-diff" title="Last value: {{ report.diff.ccg_duty_officer }}" {% endif %}>CCG-W ER Duty Officer: {{ report.ccg_duty_officer }}</p>
+        <p {% if report.diff.tc_marine_safety %}class="alert alert-danger spill-diff" title="Last value: {{ report.diff.tc_marine_safety }}" {% endif %}>TC marine Safety - Vancouver: {{ report.tc_marine_safety }}</p>
+        <p {% if report.diff.vancouver_hm %}class="alert alert-danger spill-diff" title="Last value: {{ report.diff.vancouver_hm }}" {% endif %}>Vancouver HM: {{ report.vancouver_hm }}</p>
+        <p {% if report.diff.area_mcts_centre %}class="alert alert-danger spill-diff" title="Last value: {{ report.diff.area_mcts_centre }}" {% endif %}>Area MCTS Centre: {{ report.area_mcts_centre }}</p>
+        <p {% if report.diff.dfo_public_affairs %}class="alert alert-danger spill-diff" title="Last value: {{ report.diff.dfo_public_affairs }}" {% endif %}>DFO Public Affairs: {{ report.dfo_public_affairs }}</p>
+        <p {% if report.diff.roc_officer %}class="alert alert-danger spill-diff" title="Last value: {{ report.diff.roc_officer }}" {% endif %}>ROC Officer: {{ report.roc_officer }}</p>
         <hr>
-        <p>ER Region: {{ report.er_region }}</p>
-        <p>Fleet Tasking: {{ report.fleet_tasking }}</p>
-        <p>Station or Ship: {{ report.station_or_ship }}</p>
-        <p>Unit: {{ report.unit }}</p>
-        <p>Severity: {{ report.severity }}</p>
+        <p {% if report.diff.er_region %}class="alert alert-danger spill-diff" title="Last value: {{ report.diff.er_region }}" {% endif %}>ER Region: {{ report.er_region }}</p>
+        <p {% if report.diff.fleet_tasking %}class="alert alert-danger spill-diff" title="Last value: {{ report.diff.fleet_tasking }}" {% endif %}>Fleet Tasking: {{ report.fleet_tasking }}</p>
+        <p {% if report.diff.station_or_ship %}class="alert alert-danger spill-diff" title="Last value: {{ report.diff.station_or_ship }}" {% endif %}>Station or Ship: {{ report.station_or_ship }}</p>
+        <p {% if report.diff.unit %}class="alert alert-danger spill-diff" title="Last value: {{ report.diff.unit }}" {% endif %}>Unit: {{ report.unit }}</p>
+        <p {% if report.diff.severity %}class="alert alert-danger spill-diff" title="Last value: {{ report.diff.severity }}" {% endif %}>Severity: {{ report.severity }}</p>
 
         {% if report.attachments %}
             <hr>
@@ -95,15 +96,18 @@
     </div>
     <div class="col-3">
         
-        <h5>Older Versions of this report</h5>
-        <p>Click on any of the timestamps below to see the state of this report at that time.</p>
-        {% for ts in timestamps %}
-            <p>
-            <a href="{{ url_for('report.show_report', report_num=report.report_num, timestamp=ts.ts_url) }}">
-                {{ ts.ts_ccg_format }}
-            </a>
-            </p>
-        {% endfor %}
+        {# Only show older versions if they exist #}
+        {% if timestamps|length > 1 %}
+            <h5>Older Versions of this report</h5>
+            <p>Click on any of the timestamps below to see the state of this report at that time.</p>
+            {% for ts in timestamps %}
+                <p>
+                <a href="{{ url_for('report.show_report', report_num=report.report_num, timestamp=ts.ts_url) }}">
+                    {{ ts.ts_ccg_format }}
+                </a>
+                </p>
+            {% endfor %}
+        {% endif %}
 
         <h5>Update this report</h5>
         <p>Click the button below to make changes to this report.</p>
