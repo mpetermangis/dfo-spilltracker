@@ -52,9 +52,7 @@
         value="{{ report.recorded_by}}">
 
     {# Hide this field if a New report #}
-    <div class="form-group">
-        {% if action == 'New' %} style="display:none" 
-        {% endif %}>
+    <div class="form-group" {% if action == 'New' %} style="display:none" {% endif %}>
         <label for="update_text">Update Text</label>
         <textarea rows="5" class="form-control spilldata" id="update_text" name="update_text" 
             aria-describedby="updateHelp">{{ report.update_text }}</textarea>
