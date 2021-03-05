@@ -264,8 +264,8 @@
     <div class="form-group">
         <label for="response_activated">Response Activated</label>
         <select class="form-control spilldata" id="response_activated" name="response_activated">
-            <option value="Yes" {% if report.response_activated %} selected {% endif %}>Yes</option>
-            <option value="No" {% if not report.response_activated %} selected {% endif %}>No</option>
+            <option value="No" {% if report.response_activated=='No' %} selected {% endif %}>No</option>
+            <option value="Yes" {% if report.response_activated=='Yes' %} selected {% endif %}>Yes</option>
         </select>
     </div>
 

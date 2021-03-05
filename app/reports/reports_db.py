@@ -1,5 +1,6 @@
 
 import os
+import re
 from datetime import datetime, timedelta, date
 from sqlalchemy import create_engine, Column, Integer, Text, DateTime, Float
 from sqlalchemy.exc import SQLAlchemyError, ProgrammingError
@@ -391,6 +392,22 @@ def format_for_display(report):
     return display_report
 
 
+def clean_string(text):
+    """
+    Removes all linebreaks from a text block
+    :param text:
+    :return: text with linebreaks removed, strip, excess whitespace
+    """
+    if type(text) is not str:
+        return text
+
+    # Remove linebreaks
+    text = text.replace('\r', '').replace('\n', '')
+    # Replace multiple whitespace with a single space
+    text = re.sub('\s+', ' ', text)
+    return text.strip()
+
+
 def get_diff(report, last_report):
     """
     Get the diff between two versions of a report
@@ -401,7 +418,10 @@ def get_diff(report, last_report):
     diff = {}
     for key, value in report.items():
         last_value = last_report.get(key)
-        if last_value != value:
+        # Compare contents after stripping, removing linebreaks and excess whitespace
+        cmp_value = clean_string(value)
+        cmp_last_value = clean_string(last_value)
+        if cmp_last_value != cmp_value:
             # Change null/empty last values to a string markert
             if not last_value:
                 last_value = '(empty)'
@@ -413,6 +433,7 @@ def get_diff(report, last_report):
     return diff
 
 
+# Done: Response Activated: Yes is turning itself on when updating a spill report
 def get_report_for_display(report_num, ts_url=None):
     """
     Retrieve a spill report and format it for display in an HTML template
