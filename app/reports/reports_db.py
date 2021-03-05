@@ -426,8 +426,13 @@ def get_report_for_display(report_num, ts_url=None):
         return None
 
     display_report = format_for_display(final_report)
-    last_report = format_for_display(last_report)
-    diff = get_diff(display_report, last_report)
+    if last_report:
+        # If there is a previous report to compare with, get the diff
+        last_report = format_for_display(last_report)
+        diff = get_diff(display_report, last_report)
+    else:
+        # Otherwise set diff to an empty dict
+        diff = {}
 
     # Add attachments
     attachments = get_attachments(report_num)
