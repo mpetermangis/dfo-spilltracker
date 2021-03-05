@@ -82,6 +82,7 @@ def render_map_samples():
         spills_display.append(db.null_to_empty_string(sp))
     rendered = render_template('snippets/_report_map_samples_all.html',
                                spills=spills_display)
+    logger.info('Rendered %s report samples' % len(spills))
     return jsonify(success=True, data=rendered), 200
 
 

@@ -57,17 +57,30 @@
 
 .report-sample {
     font-size: 0.8rem;
-    padding: 0 !important;
+    padding: 0.3rem !important;
 }
 
 .spill-diff {
     padding: .25rem 0.75rem !important;
 }
 
+#report_map_row {
+    margin: 0px !important;
+}
+
 #report_map_leaflet {
-    height: 600px;
-    /* width: 80%; */
+    /* https://stackoverflow.com/a/17437775 */
+    height: calc(100vh - 65px);
+    width: 100%;
     border: 1px solid black;
+}
+
+/* Set to same height as map, allow vertical scroll */
+#report_map_column {
+    height: calc(100vh - 65px);
+    overflow-y:auto;
+    width: 300px;
+    background: #fffef5;
 }
 
 .exxon {

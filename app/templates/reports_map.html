@@ -1,6 +1,8 @@
 
 {% extends "_base.html" %}
-{% block content %}
+{# {% block content %} #}
+
+{% block fullpage %}
 
 {% set title = 'Report Map - CCG/DFO Spill Tracker' %}
 
@@ -13,25 +15,37 @@
     crossorigin=""></script>
 
 <main id="spillReports" role="main">
-<h3>Map View of Spill Reports</h3>
+{# <h3>Map View of Spill Reports</h3>
 
 <div class="row mb-2">
   <div class="col-9">
     The map below shows all spill reports in the selected area.  The boxes to the right of the map show a (random) sample of up to 5 spills from this area. 
   </div>
-</div>
+</div> #}
 
-<div class="row">
-    <div class="col-9">
-        <div id="report_map_leaflet" class="mt-3 mb-3"></div>
-    </div>
-    <div class="col-3 mt-3 mb-3" id="reportSample">
-    </div>
-</div>
+{# <div class="container"> #}
+  <div class="row" id="report_map_row">
+      {# <div class="col-9"> #}
+      <div class="col-12 col-md m-0 p-0">
+          <div id="report_map_leaflet" class="m-0"></div>
+      </div>
+      {# <div class="ol-12 col-md-auto addScroll" id="report_map_samples" style="background: red; width: 300px;"> #}
+      <div class="col-12 col-md-auto" id="report_map_column">
+        <h5 class="text-center mt-2">Latest pollution reports <br>in this area</h5>
+        <div id="report_map_samples"></div>
+        <div id="loadNextSamples" class="text-center font-weight-bold mb-3"><a href="#" id="loadNextLink">Load More...</a></div>
+        {# <a id="loadNextSamples" class="text-center font-weight-bold mb-3" href="#">Load More...</a> #}
+      </div>
+  </div>
+{# </div> #}
 
 </main>
 
 <script type="text/javascript" src="/static/spill_lib.js"></script>
 <script type="text/javascript" src="/static/reports_mapview.js"></script>
 
-{% endblock content %}
+{% endblock fullpage %}
+
+{# Override footer #}
+{% block footer %}
+{% endblock footer %}

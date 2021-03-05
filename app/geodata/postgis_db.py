@@ -50,7 +50,8 @@ def get_reports_bbox(lon_min, lat_min, lon_max, lat_max):
         ST_MakeEnvelope (
             %s, %s, -- bounding 
             %s, %s, -- box limits
-            %s);
+            %s)
+    order by last_updated desc ;
     ''' % (lon_min, lat_min, lon_max, lat_max, REPORT_SRID)
 
     reports = engine.execute(bbox_query)
@@ -68,10 +69,10 @@ def get_reports_bbox(lon_min, lat_min, lon_max, lat_max):
             'longitude': r.longitude
         }
 
-        logger.info('Got report: %s' % r_mapview)
+        logger.debug('Got report: %s' % r_mapview)
         mapview_reports.append(r_mapview)
 
-    logger.info('%s reports in this Bbox' % len(mapview_reports))
+    logger.info('There are %s reports in this Bbox' % len(mapview_reports))
     return mapview_reports
 
 
