@@ -1,10 +1,12 @@
 
 Todo:
-    - don't show "Older Versions of this report" if only one version
     - export individual report to Excel using the template provided
     - allow editing (remove) attachments
 
 Done:
+    - update user registration templates with content from Nick
+    - get out of email sandbox
+    - don't show "Older Versions of this report" if only one version
     - map preview. on coordinate field change, calculate lat-lon, update Leaflet map (zoom to point)
     - Add text: (proof of concept) / prototype.  Not to be used operationally
     - “Update Text” field for updates

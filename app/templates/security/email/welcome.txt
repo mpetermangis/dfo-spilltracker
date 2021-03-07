@@ -1,4 +1,6 @@
-{{ _('Welcome %(email)s!', email=user.email) }}
+{{ _('Welcome to marinepollution.ca, %(email)s!', email=user.email) }}
+
+This is a prototype database and is not intended to be used operationally. If you would like to provide feedback about the prototype, please contact Nicholas Benoy at DFO (email address can be found in your address book)
 
 {% if security.confirmable %}
 {{ _('You can confirm your email through the link below:') }}

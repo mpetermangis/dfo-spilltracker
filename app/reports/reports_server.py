@@ -1,4 +1,4 @@
-from flask import Blueprint, flash, jsonify, request, redirect, render_template, url_for, send_file
+from flask import Blueprint, flash, jsonify, request, redirect, render_template, url_for, send_file, send_from_directory
 from flask_login import current_user
 from werkzeug.utils import secure_filename
 import os
@@ -15,6 +15,8 @@ from app.geodata import postgis_db
 logger = settings.setup_logger(__name__)
 
 rep = Blueprint('report', __name__, url_prefix='/report')
+                # static_url_path='/report/uploads',
+                # static_folder=settings.upload_root)
 
 
 # All endpoints in this blueprint require user to be logged in
@@ -40,6 +42,15 @@ def reports_all():
     reports_list = db.list_all_reports()
     return render_template('reports_list.html',
                            reports_list=reports_list)
+
+
+@rep.route('/uploads/<report_num>/<path:filename>')
+def serve_attachments(report_num, filename):
+    fulldir = os.path.join(settings.upload_root,
+                            report_num)
+    logger.info('Serving attachment: %s, %s' % (fulldir, filename))
+    # pass
+    return send_from_directory(fulldir, filename)
 
 
 def add_leaflet_popups(mapview_reports):

@@ -86,8 +86,10 @@
             <div class="ml-3">
             {% for file in report.attachments %}
                 <div class="row mb-3 attach-container">
-                    <img class="attach-file-icon" src="{{ url_for('static', filename=file.icon_path) }}" alt="{{ file.filename }} preview">
-                    <a class="ml-3 align-self-center" href="{{ url_for('static', filename=file.url_path) }}">{{ file.filename }}</a>
+                    {# <img class="attach-file-icon" src="{{ url_for('static', filename=file.icon_path) }}" alt="{{ file.filename }} preview"> #}
+                    {# <a class="ml-3 align-self-center" href="{{ url_for('static', filename=file.url_path) }}">{{ file.filename }}</a> #}
+                    <img class="attach-file-icon" src="/{{ file.url_path }}" alt="{{ file.filename }} preview">
+                    <a class="ml-3 align-self-center" href="/{{ file.url_path }}">{{ file.filename }}</a>
                 </div>
             {% endfor %}
             </div>

@@ -342,7 +342,7 @@ def format_coordinates(report):
     coord_placeholder = ''
     coord_help = 'Format: '
     if coord_type == 'Decimal Degrees':
-        coord_pattern = '\d{2}\.\d+,-\d{3}\.\d+'
+        coord_pattern = '\d{1,2}\.\d+,-\d{1,3}\.\d+'
         coord_placeholder = 'XX.XXX,-XXX.XXX'
     elif coord_type == 'Degrees Decimal Minutes':
         coord_pattern = '\d{2} \d{1,2}\.\d+ [Nn] \d{2,3} \d{1,2}\.\d+ [Ww]'
@@ -510,7 +510,7 @@ def get_attachments(report_num):
     for res in results:
         res_dict = result_to_dict(res)
         type = res_dict.get('type')
-        file_path = 'uploads/%s/%s' % (
+        file_path = 'report/uploads/%s/%s' % (
                 res_dict.get('report_num'), res_dict.get('filename'))
         res_dict['url_path'] = file_path
         if type in settings.IMAGE_FORMATS:

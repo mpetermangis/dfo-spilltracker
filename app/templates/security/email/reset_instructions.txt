@@ -1,3 +1,5 @@
+A password request was received for your email address. If this was not you, please disregard this email. If this was you, please click the link below to reset your password:
+
 {{ _('Click the link below to reset your password:') }}
 
 {{ reset_link }}

@@ -6,7 +6,11 @@ var mymap = L.map('mapid', {
 // Default view (Canada-wide)
 var defaultView = [55.0, -90.5]
 var defaultZoom = 4
-var defaultCoordinateType = 'Decimal Degrees'
+const defaultCoordType = 'Decimal Degrees'
+// const defaultCoordPattern = '\d{2}\.\d+,-\d{3}\.\d+'
+const defaultCoordPattern = String.raw`\d{1,2}\.\d+,-\d{1,3}\.\d+`
+const defaultCoordPlaceholder = 'XX.XXX,-XXX.XXX'
+
 mymap.setView(defaultView, defaultZoom)
 L.control.zoom({
     position: 'topright'
@@ -22,11 +26,6 @@ if (markerdrag){
     editable = true
 }
 console.log(`Coordinate: ${saved_latitude}, ${saved_longitude}, drag: ${editable}`)
-// if (staticMap){
-//     dragOption = false
-//     console.log('Map is static. Marker drag option: '+dragOption)
-// }
-// var marker = new L.CircleMarker(coordCenter, {draggable:'true'})
 
 // Default marker, draggable if not in a static view
 var coordCenter = [0, 0]
@@ -55,8 +54,7 @@ function refreshCoords(){
      * 1. (re)loading the report_form page
      * 2. moving the marker on the map
      * 3. changing the coordinate display type
-     *  */ 
-    
+     *  */  
 }
 
 function updateCoordsFromLatLng(position){
@@ -78,9 +76,11 @@ function updateCoordsFromLatLng(position){
         var coordType = $('#coordinate_type').val()
         // If coordType is not set, use Decimal Degrees by default
         if ( !($('#coordinate_type').val()) ){
-            coordType = defaultCoordinateType
-            console.log('coordinate_type is undefined. Set to : ' +coordType)
-            $('#coordinate_type').val(coordType)
+            coordType = defaultCoordType
+            console.log(`Undefined coordinate_type. Set to: ${defaultCoordType}, pattern: ${defaultCoordPattern}, placeholder: ${defaultCoordPlaceholder}`)
+            $('#coordinate_type').val(defaultCoordType)
+            $('#coordinates').attr('pattern', defaultCoordPattern)
+            $('#coordinates').attr('placeholder', defaultCoordPlaceholder)
         }
         // Set value of coordinate field from returned coordinates
         var newCoords = data[coordType]
