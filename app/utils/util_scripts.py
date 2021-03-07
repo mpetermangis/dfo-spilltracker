@@ -1,6 +1,10 @@
+import sys
+sys.path.extend(['/home/spill/spilltracker'])
+
 from app.utils import polrep_loader
 import os
 import settings
+
 
 logger = settings.setup_logger(__name__)
 
