@@ -8,6 +8,7 @@ https://suryasankar.medium.com/a-basic-app-factory-pattern-for-production-ready-
 https://stackoverflow.com/a/64680953
 """
 
+import traceback
 from flask import Flask, render_template
 from flask_security import Security, login_required
 from flask_mail import Mail
@@ -18,10 +19,10 @@ from wtforms import StringField
 import flask_whooshalchemy as wa
 
 import settings
-from app.user import user_datastore
+from app.user import user_datastore, Role, User
 from app.database import db
 from app.reports.reports_server import rep
-from app.geodata import coord_converter, postgis_db
+from app.geodata import postgis_db
 from app.geodata.coord_converter import geo
 from app.admin.admin_server import adm
 from app.reports.reports_db import SpillReport
@@ -36,7 +37,6 @@ def create_app(register_blueprints=True):
     CORS(app)
 
     # Disable debug mode on prod
-    # if socket.gethostname() == 'spilltracker':
     if settings.PROD_SERVER:
         app.config["DEBUG"] = False
 
@@ -68,19 +68,18 @@ def create_app(register_blueprints=True):
     # Disable caching on downloaded files
     app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
-    # SQLALCHEMY_TRACK_MODIFICATIONS must be enabled for flask-whooshalchemy3
+    # SQLALCHEMY_TRACK_MODIFICATIONS must be *enabled* for flask-whooshalchemy3
     # fulltext search. If disabled, it will NOT propagate updates to the search index.
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
     app.config['WHOOSH_INDEX_PATH'] = settings.WHOOSH_INDEX
     logger.info('WHOOSH_INDEX_PATH set to: %s' % settings.WHOOSH_INDEX)
 
     # Flask-Security optionally sends email notification to users upon registration, password reset, etc.
-    # It uses Flask-Mail behind the scenes.
-    # Set mail-related config values.
+    # It uses Flask-Mail behind the scenes. Email-related config values are set here.
     app.config['SECURITY_RECOVERABLE'] = True
     app.config['SECURITY_EMAIL_SENDER'] = 'no-reply@marinepollution.ca'
 
-    # SSL disabled, use TLS instead to prevent this error:
+    # SSL is disabled, use TLS instead to prevent this error:
     # ssl.SSLError: [SSL: WRONG_VERSION_NUMBER] wrong version number (_ssl.c:1123)
     # https://stackoverflow.com/a/66290550
     # app.config['MAIL_USE_SSL'] = True
@@ -109,32 +108,48 @@ def create_app(register_blueprints=True):
              register_form=ExtendedRegisterForm)
 
     # Initialize Flask-Mail in the app
-    # don't need the returned mail = object
+    # We don't need the returned Mail object
     Mail(app)
 
     # All of the following must be done within an app context
     with app.app_context():
         # Create DB tables with the SQLAlchemyUserDatastore config as defined above
+        logger.info('Initializing database...')
         db.create_all()
 
         # Executes before the first request is processed.
         @app.before_first_request
         def before_first_request():
 
+            logger.info('Initializing user roles...')
+
             # Create the Roles, unless they already exist
             user_datastore.find_or_create_role(name='admin', description='Administrator')
             user_datastore.find_or_create_role(name='user', description='CCG User')
             user_datastore.find_or_create_role(name='observer', description='Observer with read-only access')
 
-            # if settings.PROD_SERVER:
             postgis_db.create_map_view()
 
-            # user_tables.userdb.session.commit()
+            # Create user tables in user_datastore
             db.session.commit()
 
-            # Create polrep sequence to generate unique POLREP numbers
-            # logger.info('Initialize polrep sequence from app factory...')
-            # reports_db.create_polrep_sequence()
+            # Add core admin users: Load the admin role
+            adm_role = Role.query.filter(Role.name == 'admin').first()
+
+            # Add this role to each admin user
+            for adm_email in settings.ADMIN_EMAILS:
+                logger.info('Adding admin role for %s' % adm_email)
+                try:
+                    adm_user = User.query.filter(User.email == adm_email).first()
+                    if not adm_user:
+                        logger.warning('User does not exist: %s' % adm_email)
+                        continue
+                    adm_user.roles.append(adm_role)
+                    db.session.add(adm_user)
+                    db.session.commit()
+                except:
+                    logger.error('Cannot add admin role for: %s. Duplicate key violation?' % adm_email)
+                    logger.error(traceback.format_exc())
 
         # Always add current user to templates
         @app.context_processor
@@ -149,7 +164,6 @@ def create_app(register_blueprints=True):
         # Add search index for reports
         logger.info('Adding whoosh fulltext index for SpillReport...')
         wa.search_index(app, SpillReport)
-        # wa.create_index(app, SpillReport)
 
         # from app.user import User
         # wa.search_index(app, User)
@@ -170,7 +184,6 @@ def create_app(register_blueprints=True):
         def index():
             # Users must be authenticated to view the home page, but they don't have to have any particular role.
             # Flask-Security will display a login form if the user isn't already authenticated.
-            # user = get_current_user()
             logger.info('Homepage requested by: %s (id %s)' % (current_user.email, current_user.id))
             return render_template('index.html',
                                    user=current_user)

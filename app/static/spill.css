@@ -83,14 +83,6 @@
     background: #fffef5;
 }
 
-.exxon {
-    margin-top: 0rem;
-    /* background-image: url('/static/exxon-valdez.jpg'); */
-    background-image: url('https://www.marineinsight.com/wp-content/uploads/2015/02/OilSheenFromValdezSpill1-1280x720.jpg');
-    background-size: cover;
-    height: 100%;
-}
-
 .jumbotron {
     /* background-color: transparent; */
     /* margin-top: 0rem; */

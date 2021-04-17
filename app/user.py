@@ -2,11 +2,6 @@ from app.database import db
 from flask_security import (
     SQLAlchemyUserDatastore, UserMixin, RoleMixin)
 
-# Define user models
-# roles_users = db.Table('roles_users',
-#                            db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),
-#                            db.Column('role_id', db.Integer(), db.ForeignKey('role.id')))
-
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
@@ -16,7 +11,8 @@ class User(db.Model, UserMixin):
     active = db.Column(db.Boolean, default=False)
     confirmed_at = db.Column(db.DateTime())
     # roles = db.relationship('Role', secondary=roles_users, backref=db.backref('users', lazy='dynamic'))
-    roles = db.relationship('Role', secondary='user_roles', backref=db.backref('users', lazy='dynamic'))
+    roles = db.relationship('Role', secondary='user_roles',
+                            backref=db.backref('users', lazy='dynamic'))
 
 
 class Role(db.Model, RoleMixin):
@@ -33,6 +29,4 @@ class UserRoles(db.Model):
     role_id = db.Column(db.Integer(), db.ForeignKey('role.id', ondelete='CASCADE'))
 
 
-
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)
-

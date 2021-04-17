@@ -1,8 +1,7 @@
+import os
 from flask import Blueprint, flash, jsonify, request, redirect, render_template, url_for, send_file, send_from_directory
 from flask_login import current_user
 from werkzeug.utils import secure_filename
-import os
-
 
 import settings
 from app.reports import excel_export
@@ -49,7 +48,6 @@ def serve_attachments(report_num, filename):
     fulldir = os.path.join(settings.upload_root,
                             report_num)
     logger.info('Serving attachment: %s, %s' % (fulldir, filename))
-    # pass
     return send_from_directory(fulldir, filename)
 
 
@@ -100,9 +98,6 @@ def render_map_samples():
 @rep.route('/search/<query_text>', methods=['GET'])
 def report_search(query_text):
     logger.info('Searching text: %s' % query_text)
-    # session = db.Session()
-    # q = session.query(SpillReport)
-    # results = q.search(query_text).all()
     results = SpillReport.query.search(query_text, limit=10).all()
     if len(results) is None:
         logger.warning('No search results')
@@ -170,7 +165,6 @@ def update_report(report_num):
                            report_num=report_num,
                            action='Update',
                            lookups=lookups.lu,
-                           # marker_drag=True,
                            report=final_report)
 
 

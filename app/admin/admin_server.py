@@ -9,9 +9,9 @@ from flask_security import roles_required
 # Flask blueprint for admin page
 adm = Blueprint('admin', __name__, url_prefix='/admin')
 
-
-@roles_required('admin')
+# @route() must always be the outer-most decorator
+# https://flask-user.readthedocs.io/en/latest/authorization.html
 @adm.route('/')
+@roles_required('admin')
 def admin():
     return 'Hello admin'
-

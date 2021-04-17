@@ -56,7 +56,10 @@ logger.info('Email notifications set to: %s' % NOTIFY_EMAILS)
 
 WHOOSH_INDEX = os.path.join(POLREP_ROOT, '.indexes')
 
+# Default email distribution list
 DEFAULT_UPDATE_LIST = ['mpetermangis@gmail.com', 'Nicholas.Benoy@dfo-mpo.gc.ca']
+# Fixed list of admin accounts
+ADMIN_EMAILS = ['mpetermangis@gmail.com', 'Nicholas.Benoy@dfo-mpo.gc.ca']
 
 base_dir = os.path.dirname(os.path.realpath(__file__))
 upload_root = os.path.join(base_dir, 'uploads')
@@ -84,11 +87,6 @@ if not SPILL_TRACKER_DB_URL:
 # Generated with secrets.token_urlsafe(16)
 db_secret = os.environ.get('SPILLDB_SECRET')
 db_salt = os.environ.get('SPILLDB_SALT')
-# db_user = os.environ.get('PGUSER')
-# db_name = os.environ.get('PGDATABASE')
-# db_pass = os.environ.get('PGPASSWORD')
-# db_host = os.environ.get('PGHOST')
-# db_port = os.environ.get('PGPORT')
 if not db_secret or not db_salt:
     logger.error('SPILLDB_SECRET and SPILLDB_SALT env vars required!')
     sys.exit(1)

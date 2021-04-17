@@ -40,7 +40,6 @@ def chk_coordinates():
         return jsonify(success=True, msg=status, data=data), 200
 
 
-# Done: convert from latlon to x format when user clicks point on the map, or moves point.
 def degree_to_decimal_min(degree_part):
     """
     Converts remainder part of a degree to decimal minutes
@@ -70,6 +69,7 @@ def coord_to_decimal_and_ms(coord):
 
 def convert_from_latlon(latitude, longitude):
     """
+    Convert from latlon to x format when user clicks point on the map, or moves point.
     Converts from lat-lon to coordinates in 3 formats for frontend:
     Decimal Degrees (trivial)
     Degrees Minutes Seconds
@@ -146,7 +146,7 @@ def convert_to_latlon(coordinate_type, coord_str):
         latitude = north_degrees
         longitude = west_degrees
 
-    # Check lat-lon within range
+    # Check that lat-lon is valid
     if not -180 <= longitude <= 180:
         return 'Longitude must be between -180, 180 degrees (value: %s)' % longitude, None, None
     if not -90 <= latitude <= 90:

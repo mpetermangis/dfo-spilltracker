@@ -1,5 +1,4 @@
 from sqlalchemy import create_engine
-from flask import render_template
 import settings
 
 logger = settings.setup_logger(__name__)

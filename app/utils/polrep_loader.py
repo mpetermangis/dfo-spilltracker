@@ -1,5 +1,11 @@
+"""
+This script is only for loading Legacy POLREPS. It runs once on system startup,
+and only populates the DB if the records don't already exist.
+
+WARNING: DO NOT RUN LEGACY POLREP LOADER FROM HERE! Only use util_scripts.py
+"""
+
 from openpyxl import load_workbook
-import os
 import settings
 from datetime import datetime
 from traceback import format_exc
@@ -45,6 +51,7 @@ def create_report_map_tbl():
     logger.info('Creating report_map TABLE in PostGIS')
     engine.execute('DROP TABLE IF EXISTS report_map_tbl;')
     engine.execute('CREATE TABLE report_map_tbl AS SELECT * FROM report_map_view;')
+
     # Add geo index to the geometry column
     add_geo_index = '''
     CREATE INDEX idx_geom_report_map

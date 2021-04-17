@@ -45,9 +45,8 @@ select * from spill_reports sr where report_num ='2019-1010';
 
 --delete from public.user where id=3;
 
-
-
-
-
-
 select * from spill_reports sr where report_num='2019-1042';
+
+insert into public.user_roles (user_id, role_id) values (2, 1);
+
+--delete from public.user_roles;

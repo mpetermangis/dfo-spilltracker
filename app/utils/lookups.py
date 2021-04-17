@@ -6,10 +6,6 @@ coord_types = ['Decimal Degrees', 'Degrees Decimal Minutes', 'Degrees Minutes Se
 poll_types = ['Unknown', 'Potential', 'Gasoline', 'Diesel', 'Heavy Oils (Bunker, Crude)', 'Other (Specify)']
 quantity_units = ['gallons', 'litres', 'barrels', 'sheen dimensions - feet', 'sheen dimensions - meters', 'other']
 roc_officers = ['Officer 1', 'Officer 2', 'Officer 3']
-# timezones = [{'PST': 'America/Vancouver'}, {'MST': 'America/Edmonton'},
-#              {'CST (Regina)':'America/Regina'}, {'CST (Winnipeg)': 'America/Winnipeg'},
-#              {'EST': 'America/Toronto'}, {'AST': 'America/Halifax'},
-#              {'Newfoundland': 'America/St_Johns'}]
 
 timezones = [('PST', 'America/Vancouver'), ('MST', 'America/Edmonton'),
              ('CST (Regina)','America/Regina'), ('CST (Winnipeg)', 'America/Winnipeg'),

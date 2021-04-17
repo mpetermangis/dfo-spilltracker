@@ -13,7 +13,6 @@ from app.geodata import coord_converter, postgis_db
 from app.user import User
 
 from app.database import db
-# from app.database import db.Column, Integer 
 
 from whoosh.analysis import StemmingAnalyzer
 
@@ -121,7 +120,7 @@ class SpillReport(db.Model):
     severity = Column(Integer)
 
     def __repr__(self):
-        # this is how our object is printed when we print it out
+        # This is how our object is printed
         return '%s (%s)' % (self.report_name, self.report_num)
 
 
@@ -139,13 +138,6 @@ class AttachedFile(db.Model):
     # spill_id = Column(Integer, nullable=False)
     filename = Column(Text, nullable=False)
     type = Column(Text, nullable=False)
-
-
-# def create_polrep_sequence():
-#     """
-#     Create a polrep sequence to generate unique POLREP numbers
-#     :return:
-#     """
 
 # Create a polrep sequence to generate unique POLREP numbers
 logger.info('Creating DB sequence polrep_num')
@@ -232,11 +224,8 @@ def list_all_reports():
     Order by last_updated, desc
     :return:
     """
-    # session = Session()
-    # results = session.query(SpillReport).all()
     logger.info('Querying all reports...')
     results = SpillReport.query.all()
-    # session.close()
     reports_all = {}
     logger.info('Preparing %s reports for display' % len(results))
     for res in results:
@@ -289,7 +278,6 @@ def get_report(report_num, ts_url=None):
             SpillReport.report_num==report_num).order_by(
                 SpillReport.last_updated.desc()
             ).limit(2).all()
-            # SpillReport.last_updated.desc()).first()
 
     else:
         # Get update at a specific timestamp
@@ -300,7 +288,6 @@ def get_report(report_num, ts_url=None):
             SpillReport.last_updated <= timestamp).order_by(
                 SpillReport.last_updated.desc()
             ).limit(2).all()
-            # SpillReport.last_updated == timestamp).first()
 
     """
     Most efficient setup is:
@@ -433,7 +420,6 @@ def get_diff(report, last_report):
     return diff
 
 
-# Done: Response Activated: Yes is turning itself on when updating a spill report
 def get_report_for_display(report_num, ts_url=None):
     """
     Retrieve a spill report and format it for display in an HTML template
@@ -452,6 +438,7 @@ def get_report_for_display(report_num, ts_url=None):
         last_report = format_for_display(last_report)
         diff = get_diff(display_report, last_report)
     else:
+        # Fixed: Response Activated: Yes is turning itself on when updating a spill report
         # Otherwise set diff to an empty dict
         diff = {}
 
@@ -473,8 +460,9 @@ def get_timestamps(report_num):
 
     timestamps = []
     # Return a copy in human-readable form, another in URL-safe form
-    # results = SpillReport.query(SpillReport.last_updated).filter(SpillReport.report_num == report_num)
-    results = db.session.query(SpillReport.last_updated).filter(SpillReport.report_num == report_num)
+    results = db.session.query(
+        SpillReport.last_updated).filter(
+        SpillReport.report_num == report_num)
     for result in results:
         timestamp = result[0]
         ts_url = timestamp.strftime(settings.filesafe_timestamp)
@@ -502,7 +490,6 @@ def current_time_nearest_sec():
 
 
 def get_attachments(report_num):
-    # session = Session()
     # Get all attachments for this report_num
     attachments = []
     results = AttachedFile.query.filter(
@@ -533,7 +520,6 @@ def get_file_extension(filename):
 
 def attachments_to_db(report_num, attachments):
     # Create folder for report number
-    # upload_root = os.path.join(settings.base_dir, 'static', 'attachments')
     report_folder = os.path.join(settings.upload_root, report_num)
     os.makedirs(report_folder, exist_ok=True)
     attach_list = []
@@ -546,10 +532,8 @@ def attachments_to_db(report_num, attachments):
                        'type': extension}
         attach_list.append(attachment_data)
 
-    # session = Session()
     try:
         for attach in attach_list:
-            # new_attach = AttachedFile(**attach)
             db.session.add(AttachedFile(**attach))
         db.session.commit()
         # If ok, move files here
@@ -559,8 +543,6 @@ def attachments_to_db(report_num, attachments):
             os.rename(src, dst)
     except (SQLAlchemyError, TypeError):
         logger.error(traceback.format_exc())
-    # finally:
-    #     session.close()
 
 
 def save_report_data(report_data):
@@ -626,7 +608,6 @@ def save_report_data(report_data):
         report_num = get_next_polrep_num()
         report_data['report_num'] = report_num
         logger.info('Creating a NEW report with report #: %s' % report_num)
-        # new_flag = True
 
     else:
         # Query DB to get the count
