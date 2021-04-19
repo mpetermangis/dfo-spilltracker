@@ -7,7 +7,8 @@ Adapted from:
 https://suryasankar.medium.com/a-basic-app-factory-pattern-for-production-ready-websites-using-flask-and-sqlalchemy-dbb891cdf69f
 https://stackoverflow.com/a/64680953
 """
-
+import os
+import json
 import traceback
 from flask import Flask, render_template
 from flask_security import Security, login_required
@@ -91,6 +92,24 @@ def create_app(register_blueprints=True):
     app.config['MAIL_USERNAME'] = settings.smtp_user
     app.config['MAIL_PASSWORD'] = settings.smtp_pass
 
+    # Load mailing lists from a file, if it exists
+    # if os.path.exists(settings.MAILING_LIST_FILE):
+    #     with open(settings.MAILING_LIST_FILE) as f:
+    #         data = json.load(f)
+    #
+    #     # for key, value in data.items():
+    #     #     app.config.update(
+    #     #         key=value
+    #     #     )
+    #
+    #     # app.config.update(
+    #     #     **data
+    #     # )
+    #
+    #     app.config.update(
+    #         EMAIL_LISTS=data
+    #     )
+
     # Initialize SQLAlchemy on this app
     db.init_app(app)
 
@@ -151,10 +170,15 @@ def create_app(register_blueprints=True):
                     logger.error('Cannot add admin role for: %s. Duplicate key violation?' % adm_email)
                     logger.error(traceback.format_exc())
 
-        # Always add current user to templates
+        # Always add current user and admin flag to templates
+        # https://stackoverflow.com/a/26498865
         @app.context_processor
         def inject_user():
             return dict(user=current_user)
+
+        @rep.context_processor
+        def inject_admin_flag():
+            return dict(is_admin=current_user.has_role('admin'))
 
         # Register blueprints for Reports and other endpoints, only after creating user tables
         app.register_blueprint(rep)
@@ -186,7 +210,8 @@ def create_app(register_blueprints=True):
             # Flask-Security will display a login form if the user isn't already authenticated.
             logger.info('Homepage requested by: %s (id %s)' % (current_user.email, current_user.id))
             return render_template('index.html',
-                                   user=current_user)
+                                   is_admin=current_user.has_role('admin'))
+                                   # user=current_user)
 
         # Auth endpoint for nginx: https://stackoverflow.com/a/55737013
         # Allow redirect to Geoserver if auth OK

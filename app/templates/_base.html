@@ -43,6 +43,11 @@
             <ul class="navbar-nav ml-auto">
                 {# Show user menu if logged in, otherwise show Login link #}
                 {% if user %}
+                    {% if is_admin %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin.admin_page') }}">Admin</a>
+                    </li>
+                    {% endif %}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="userMenu" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         {{ user.staff_name }}

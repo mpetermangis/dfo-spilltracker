@@ -27,9 +27,17 @@ def check_login():
 
 # Always add current user to templates for this blueprint
 # https://stackoverflow.com/a/26498865
-@rep.context_processor
-def inject_user():
-    return dict(user=current_user)
+# @rep.context_processor
+# def inject_user():
+#     # user_dict = dict(user=current_user)
+#     # user_dict['is_admin'] = current_user.has_role('admin')
+#     # return user_dict
+#     return dict(user=current_user)
+#
+#
+# @rep.context_processor
+# def inject_admin_flag():
+#     return dict(is_admin=current_user.has_role('admin'))
 
 
 @rep.route('/')

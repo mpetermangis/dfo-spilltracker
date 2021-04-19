@@ -3,8 +3,8 @@
     <table class="mb-0 p-1">
     <thead>
         <tr>
-            <th>Report:</td>
-            <th><a href="{{ url_for('report.show_report', report_num=spill.report_num) }}" target="_blank">{{ spill.report_name }} ({{ spill.report_num }})</a></td>
+            <td>Report:</td>
+            <td><a href="{{ url_for('report.show_report', report_num=spill.report_num) }}" target="_blank">{{ spill.report_name }} ({{ spill.report_num }})</a></td>
         </tr>
     </thead>
     <tbody>
@@ -20,7 +20,7 @@
             <td>Quantity Units</td>
             <td>{{ spill.quantity_units }}</td>
         </tr>
-        {# <div class="col-sm">Report Name</div> #}
+
     </tbody>
     </table>
 

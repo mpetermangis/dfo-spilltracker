@@ -58,8 +58,11 @@ WHOOSH_INDEX = os.path.join(POLREP_ROOT, '.indexes')
 
 # Default email distribution list
 DEFAULT_UPDATE_LIST = ['mpetermangis@gmail.com', 'Nicholas.Benoy@dfo-mpo.gc.ca']
+
 # Fixed list of admin accounts
 ADMIN_EMAILS = ['mpetermangis@gmail.com', 'Nicholas.Benoy@dfo-mpo.gc.ca']
+
+MAILING_LIST_FILE = os.path.join(POLREP_ROOT, '.email_lists.json')
 
 base_dir = os.path.dirname(os.path.realpath(__file__))
 upload_root = os.path.join(base_dir, 'uploads')

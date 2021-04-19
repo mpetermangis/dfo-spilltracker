@@ -10,3 +10,4 @@ templates/reports_*.xlsx
 templates/report_*.xlsx
 .env
 .indexes
+.email_lists.json

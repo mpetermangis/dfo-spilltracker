@@ -1,6 +1,10 @@
+
 from app.database import db
 from flask_security import (
     SQLAlchemyUserDatastore, UserMixin, RoleMixin)
+
+import settings
+logger = settings.setup_logger(__name__)
 
 
 class User(db.Model, UserMixin):
@@ -30,3 +34,63 @@ class UserRoles(db.Model):
 
 
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)
+
+
+def list_all_users():
+    """
+    Get a list of all users and their role (each user should have only one role)
+    :return:
+    """
+    users = User.query.all()
+    display_users = []
+    for u in users:
+        disp_user = {'id': u.id,
+            'staff_name': u.staff_name,
+            'email': u.email}
+        logger.info(u.staff_name)
+        # Check if user is no longer active
+        if not u.active:
+            logger.warning('User %s is not active' % u.staff_name)
+            disp_user['role'] = 'nologin'
+        else:
+            # Check if user has roles
+            if not u.roles:
+                # Default observer if not defined
+                disp_user['role'] = 'observer'
+            else:
+                # Get the first role (should be the only)
+                disp_user['role'] = u.roles[0].name
+        display_users.append(disp_user)
+
+    return display_users
+
+
+def set_user_access(user_id, role_name):
+
+    # Get user by id
+    u = User.query.filter(User.id == user_id).first()
+    # Check role name
+    logger.info('here')
+
+    if role_name == 'nologin':
+        # Set user to inactive
+        u.active = False
+        db.session.add(u)
+        db.session.commit()
+    else:
+        # Check if role needs to be updated. Get list of existing roles
+        current_roles = [role.name for role in u.roles]
+        if role_name not in current_roles:
+            # Use the role name as-is. Get matching role from db
+            role = Role.query.filter(Role.name == role_name).first()
+            # Clear existing roles
+            u.roles.clear()
+            u.roles.append(role)
+            logger.info('Updated user role: %s' % role_name)
+            db.session.add(u)
+            db.session.commit()
+
+
+
+
+

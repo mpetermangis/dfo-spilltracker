@@ -1,0 +1,84 @@
+
+{% extends "_base.html" %}
+
+{# Always set admin flag true for this template, can only be rendered by an admin user. #}
+{% set is_admin = True %}
+
+{% block content %}
+
+{% set title = 'Admin - CCG/DFO Spill Tracker' %}
+
+<main id="polrep_admin_page" role="main">
+
+    <h2>POLREP Admin Page</h2>
+
+    <h3>User Roles</h3>
+    <p>Use the following section to manage user roles. Each user must have a role defined.
+        The No Login role is for previous users who are no longer active. They are not deleted from the system,
+        since they may be linked to spill reports, but they can no login to the system.
+    </p>
+
+    <form id="adminForm" action="{{ url_for('admin.save_admin_data') }}" method="post" enctype="multipart/form-data">
+
+        {% for user in users %}
+
+        <div class="form-group">
+
+            <div class="text-info">{{ user.staff_name }} ({{ user.email }})</div>
+
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="userid-{{ user.id }}" id="roleAdmin" value="admin"
+                     required {% if user.role=='admin' %} checked {% endif %}>
+              <label class="form-check-label" for="roleAdmin">Admin</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="userid-{{ user.id }}" id="roleUser" value="user"
+                    {% if user.role=='user' %} checked {% endif %}>
+              <label class="form-check-label" for="roleUser">User</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="userid-{{ user.id }}" id="roleObserver" value="observer"
+                    {% if user.role=='observer' %} checked {% endif %}>
+              <label class="form-check-label" for="roleObserver">Observer</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="userid-{{ user.id }}" id="roleNoLogin" value="nologin"
+                    {% if user.role=='nologin' %} checked {% endif %}>
+              <label class="form-check-label" for="roleNoLogin">No Login</label>
+            </div>
+
+        </div>
+        {% endfor %}
+
+        <h3>Manage Mailing Lists</h3>
+
+        {% for list in mailing_lists %}
+        <div class="form-group">
+            <label for="{{ list.name }}">{{ list.label }}</label>
+            <textarea rows="2" class="form-control" id="{{ list.name }}" name="{{ list.name }}"
+                aria-describedby="{{ list.name }}-help">{{ list.emails }}</textarea>
+                <small id="{{ list.name }}-help" class="form-text text-muted">{{ list.description }}</small>
+        </div>
+        {% endfor %}
+
+        <button type="submit" class="btn btn-primary">Save Settings</button>
+
+    {# <table class="p-1">
+    <thead>
+
+    </thead>
+    <tbody>
+    {% for user in users %}
+        <tr>
+            <td>{{ user.staff_name }}</td>
+            <td>{{ user.email }}</td>
+        </tr>
+    {% endfor %}  #}
+
+    </tbody>
+    </table>
+
+
+</main>
+
+{% endblock content %}
