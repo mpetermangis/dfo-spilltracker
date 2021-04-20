@@ -2,7 +2,7 @@ import os
 from datetime import datetime
 from flask import Blueprint, flash, jsonify, request, redirect, render_template, url_for, send_file, send_from_directory
 from flask_login import current_user
-from flask_security import roles_required
+from flask_security import roles_required, roles_accepted
 from werkzeug.utils import secure_filename
 
 import settings
@@ -134,10 +134,11 @@ def show_report(report_num, timestamp=None):
 
 
 @rep.route('/new', methods=['GET'])
-# If a list of role names is specified here, the user mast have
-# any one of the specified roles to gain access.
-# https://flask-user.readthedocs.io/en/latest/authorization.html
-@roles_required(['admin', 'user'])
+# Decorator which specifies that a user must have at least one of the specified roles.
+# flask_security.decorators.roles_accepted(*roles)
+# https://pythonhosted.org/Flask-Security/api.html
+# DON'T DO THIS: @roles_required(['admin', 'user'])
+@roles_accepted('admin', 'user')
 def new_report():
 
     # Display the report form template, keep it blank (no data)
@@ -153,7 +154,7 @@ def new_report():
 
 
 @rep.route('/<report_num>/update', methods=['GET'])
-@roles_required(['admin', 'user'])
+@roles_accepted('admin', 'user')
 def update_report(report_num):
     """
     Display the report form using the latest incremental data for this spill id
@@ -169,7 +170,7 @@ def update_report(report_num):
 
 
 @rep.route('/save_report_data', methods=['POST'])
-@roles_required(['admin', 'user'])
+@roles_accepted('admin', 'user')
 def save_report_data():
     """
     The forms in both /report/new and /report/<report_num>/update feed to this endpoint
@@ -197,7 +198,8 @@ def save_report_data():
 
         # Send notification email here
         msg_content, msg_subject = prepare_report_email(report_data)
-        notifications.notify_report(msg_content, msg_subject)
+        recipients = db.get_mailing_list_for_report(report_data)
+        notifications.notify_report(msg_content, msg_subject, recipients)
         return redirect(url_for('report.show_report', report_num=report_num))
     else:
         resp = jsonify(success=False, msg=status)

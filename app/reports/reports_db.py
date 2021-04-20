@@ -8,12 +8,10 @@ from sqlalchemy.schema import Sequence, CreateSequence
 import traceback
 
 import settings
-from app.utils import lookups
+from app.utils import lookups, notifications
 from app.geodata import coord_converter, postgis_db
 from app.user import User
-
 from app.database import db
-
 from whoosh.analysis import StemmingAnalyzer
 
 engine = create_engine(settings.SPILL_TRACKER_DB_URL)
@@ -631,6 +629,17 @@ def save_report_data(report_data):
         attachments_to_db(report_num, attachments)
     report_data['version_count'] = version_count
     return report_data, success, 'OK'
+
+
+def get_mailing_list_for_report(report_data):
+    """
+    Choose which mailing list should receive updates to this report, based
+    on the report data. For now, we only use the default mailing list.
+    :param report_data:
+    :return: comma-separated list of recipients
+    """
+    recipients = notifications.get_maillist_by_name('MAIL_LIST_DEFAULT')
+    return recipients
 
 
 def main():

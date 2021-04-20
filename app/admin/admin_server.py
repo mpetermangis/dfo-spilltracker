@@ -8,6 +8,7 @@ from flask import Blueprint, render_template, request, jsonify, redirect, url_fo
 from flask_security import roles_required
 from flask_login import current_user
 from app import user
+from app.utils import notifications
 
 logger = settings.setup_logger(__name__)
 
@@ -31,7 +32,7 @@ def admin_page():
     # Get all users with roles
     users = user.list_all_users()
     # TODO: dont store this in a JSON file! Use a proper DB table.
-    mailing_lists = load_mailing_list()
+    mailing_lists = notifications.load_mailing_list()
     return render_template('admin_page.html',
                            users=users,
                            mailing_lists=mailing_lists)
@@ -60,7 +61,7 @@ def save_admin_data():
             elif key.startswith('MAIL_LIST'):
                 # Save the new mailing list
                 logger.info('Save mailing list: %s' % key)
-                save_mailing_list(key, value)
+                notifications.save_mailing_list(key, value)
 
         logger.info('Saved Admin data OK, redirect to admin page')
         return redirect(url_for('admin.admin_page'))
@@ -69,33 +70,3 @@ def save_admin_data():
         status = 'No data submitted'
         resp = jsonify(success=False, msg=status)
         return resp
-
-
-def load_mailing_list():
-    with open(settings.MAILING_LIST_FILE) as f:
-        data = json.load(f)
-    return data.get('lists')
-
-
-def save_mailing_list(list_name, emails):
-    mail_lists = load_mailing_list()
-
-    # List of mailing lists
-    mail_lists_updated = []
-
-    for ml in mail_lists:
-
-        if ml.get('name') == list_name:
-            ml['emails'] = emails
-        mail_lists_updated.append(ml)
-
-    # # Set mailing list emails
-    # mail_list = data.get(list_name)
-    # if not mail_list:
-    #     logger.error('Mailing list %s not found!' % list_name)
-    #     return
-    # data[list_name]['emails'] = emails
-    data = {'lists': mail_lists_updated}
-
-    with open(settings.MAILING_LIST_FILE, 'w') as f:
-        json.dump(data, f, indent=2)

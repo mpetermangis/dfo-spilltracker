@@ -4,6 +4,7 @@ Adapted from:
 https://docs.aws.amazon.com/ses/latest/DeveloperGuide/examples-send-using-smtp.html
 """
 
+import json
 import smtplib
 import email.utils
 from email.mime.multipart import MIMEMultipart
@@ -31,7 +32,7 @@ SENDERNAME = 'Notification Service - marinepollution.ca'
 # is still in the sandbox, this address must be verified.
 # RECIPIENTS = ['mpetermangis@gmail.com', 'Nicholas.Benoy@dfo-mpo.gc.ca']
 # RECIPIENTS = ['mpetermangis@gmail.com']
-RECIPIENTS = settings.DEFAULT_UPDATE_LIST
+# RECIPIENTS = settings.DEFAULT_UPDATE_LIST
 
 # Replace smtp_username with your Amazon SES SMTP user name.
 USERNAME_SMTP = settings.smtp_user
@@ -55,18 +56,65 @@ PASSWORD_SMTP = settings.smtp_pass
 # The STMP PORT is defined in: settings.smtp_port
 
 
-def notify_report(msg_content, msg_subject):
+"""
+Utility functions for loading/saving mailing lists
+"""
+def load_mailing_list():
+    with open(settings.MAILING_LIST_FILE) as f:
+        data = json.load(f)
+    return data.get('lists')
+
+
+def save_mailing_list(list_name, emails):
+    mail_lists = load_mailing_list()
+
+    # List of mailing lists
+    mail_lists_updated = []
+
+    for ml in mail_lists:
+
+        if ml.get('name') == list_name:
+            ml['emails'] = emails
+        mail_lists_updated.append(ml)
+
+    # # Set mailing list emails
+    data = {'lists': mail_lists_updated}
+
+    with open(settings.MAILING_LIST_FILE, 'w') as f:
+        json.dump(data, f, indent=2)
+
+
+def get_maillist_by_name(list_name):
+    recipients = None
+    mail_lists = load_mailing_list()
+    for ml in mail_lists:
+        if ml.get('name') == list_name:
+            recipients = ml.get('emails')
+            logger.info('Mailing list: %s, sending to: %s' % (
+                list_name, recipients))
+
+    # If mail list not found, use default
+    if not recipients:
+        recipients = ','.join(settings.DEFAULT_UPDATE_LIST)
+        logger.warning('Mailing list %s not found: using default: %s' % (
+            list_name, recipients))
+    return recipients
+
+
+def notify_report(msg_content, msg_subject, recipients):
     """
     Sends an HTML formatted email notification
-    :param msg_content:
-    :param msg_subject:
+    :param msg_content: email content
+    :param msg_subject: subject line
+    :param recipients: comma-separated list of recipients
     :return:
     """
+
     # Create message container - the correct MIME type is multipart/alternative.
     msg = MIMEMultipart('alternative')
     msg['Subject'] = msg_subject
     msg['From'] = email.utils.formataddr((SENDERNAME, SENDER))
-    msg['To'] = ', '.join(RECIPIENTS)
+    msg['To'] = recipients
 
     # Record the MIME types of both parts - text/plain and text/html.
     # part1 = MIMEText(BODY_TEXT, 'plain')
@@ -95,7 +143,7 @@ def send_message(msg):
         server.ehlo()
         logger.info('Connected. Sending email...')
         server.login(USERNAME_SMTP, PASSWORD_SMTP)
-        server.sendmail(SENDER, RECIPIENTS, msg.as_string())
+        server.sendmail(SENDER, msg.get('To'), msg.as_string())
         server.close()
     # Display an error message if something goes wrong.
     except Exception as e:
@@ -129,7 +177,7 @@ def test_notify_report(report_num, report_name):
     msg = MIMEMultipart('alternative')
     msg['Subject'] = SUBJECT
     msg['From'] = email.utils.formataddr((SENDERNAME, SENDER))
-    msg['To'] = ', '.join(RECIPIENTS)
+    msg['To'] = ', '.join(settings.DEFAULT_UPDATE_LIST)
     # Comment or delete the next line if you are not using a configuration set
     # msg.add_header('X-SES-CONFIGURATION-SET',CONFIGURATION_SET)
 
