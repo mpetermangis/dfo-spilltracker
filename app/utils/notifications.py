@@ -90,7 +90,7 @@ def get_maillist_by_name(list_name):
     for ml in mail_lists:
         if ml.get('name') == list_name:
             recipients = ml.get('emails')
-            logger.info('Mailing list: %s, sending to: %s' % (
+            logger.info('Using mailing list %s: %s' % (
                 list_name, recipients))
 
     # If mail list not found, use default
@@ -141,9 +141,10 @@ def send_message(msg):
 
         # stmplib docs recommend calling ehlo() before & after starttls()
         server.ehlo()
-        logger.info('Connected. Sending email...')
+        to_list = msg.get('To')
+        logger.info('Connected. Sending email to: %s' % to_list)
         server.login(USERNAME_SMTP, PASSWORD_SMTP)
-        server.sendmail(SENDER, msg.get('To'), msg.as_string())
+        server.sendmail(SENDER, to_list, msg.as_string())
         server.close()
     # Display an error message if something goes wrong.
     except Exception as e:

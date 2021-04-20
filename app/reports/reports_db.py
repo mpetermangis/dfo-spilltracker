@@ -445,7 +445,7 @@ def get_report_for_display(report_num, ts_url=None):
     display_report['attachments'] = attachments
     display_report['diff'] = diff
 
-    logger.info('Got report: %s' % display_report)
+    logger.info('Displaying report: %s' % display_report.get('report_name'))
     return display_report
 
 
