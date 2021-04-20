@@ -110,11 +110,13 @@
             {% endfor %}
         {% endif %}
 
+        {% if editor %}
         <h5>Update this report</h5>
         <p>Click the button below to make changes to this report.</p>
         <div id="reportUpdateBtn">
             <a class="btn btn-primary" role="button" href="{{ url_for('report.update_report', report_num=report.report_num) }}">Update Report</a>
         </div>
+        {% endif %}
 
         <h5 class="mt-3">Download report data</h5>
         <p>Click the button below to download this report as an Excel spreadsheet.</p>

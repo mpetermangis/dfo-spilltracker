@@ -25,6 +25,19 @@ def check_login():
         return redirect(url_for('security.login'))
 
 
+def user_can_edit():
+    """
+    Return true if has User or Admin role
+    :param user:
+    :return:
+    """
+    user_roles = [role.name for role in current_user.roles]
+    if 'admin' in user_roles or 'user' in user_roles:
+        return True
+    else:
+        return False
+
+
 @rep.route('/')
 def reports_all():
     """
@@ -128,7 +141,8 @@ def show_report(report_num, timestamp=None):
     report_timestamps = db.get_timestamps(report_num)
     return render_template('report.html',
                            report=final_report,
-                           timestamps=report_timestamps)
+                           timestamps=report_timestamps,
+                           editor=user_can_edit())
 
 
 @rep.route('/new', methods=['GET'])

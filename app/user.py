@@ -46,7 +46,7 @@ def list_all_users():
         disp_user = {'id': u.id,
             'staff_name': u.staff_name,
             'email': u.email}
-        logger.info(u.staff_name)
+        logger.debug(u.staff_name)
         # Check if user is no longer active
         if not u.active:
             logger.warning('User %s is not active' % u.staff_name)
@@ -91,11 +91,11 @@ def set_user_access(user_id, role_name):
             # Clear existing roles
             u.roles.clear()
             u.roles.append(role)
-            logger.info('Updated user %s with role: %s' % (
-                u.staff_name, role_name))
             save = True
 
     # Save user data if needed
     if save:
+        logger.info('Updated user %s with role: %s, active: %s' % (
+            u.staff_name, role_name, u.active))
         db.session.add(u)
         db.session.commit()
