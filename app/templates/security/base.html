@@ -4,13 +4,28 @@
 <head>
 {% block head %}
 
-{% set title = 'CCG/DFO Spill Tracker' %}
-<!-- navbar & header here -->
-{% include 'snippets/_header.html' %}
+    <meta http-equiv="Content-Type" content="text/html" charset="UTF-8">
 
-<link rel="stylesheet" type="text/css" href="/static/spill.css">
+    <!-- Global css and js used across all content -->
 
-{% endblock head %}
+    <!-- Bootstrap CSS. Note: bootstrap and popper js are in footer -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+        integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
+        crossorigin="anonymous">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.3.1/css/all.css"
+        integrity="sha384-mzrmE5qonljUremFsqc01SB46JvROS7bZs3IO2EmfFsd15uHvIt+Y8vEf7N7fWAU"
+        crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/css?family=Roboto:400,400i,700" rel="stylesheet">
+
+    <!-- jQuery and jQuery UI -->
+    <script src="/static/jquery-3.4.1.min.js"></script>
+
+    <!-- Custom icon, CSS, js common lib -->
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="stylesheet" type="text/css" href="/static/spill.css">
+    <title>{% block title %}{% endblock %} - CCG/DFO Spill Tracker</title>
+
+    {% endblock %}
 </head>
 
 <body>

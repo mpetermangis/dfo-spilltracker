@@ -2,7 +2,7 @@ import os
 from datetime import datetime
 from flask import Blueprint, flash, jsonify, request, redirect, render_template, url_for, send_file, send_from_directory
 from flask_login import current_user
-from flask_security import roles_required, roles_accepted
+from flask_security import roles_accepted
 from werkzeug.utils import secure_filename
 
 import settings
@@ -16,8 +16,6 @@ from app.geodata import postgis_db
 logger = settings.setup_logger(__name__)
 
 rep = Blueprint('report', __name__, url_prefix='/report')
-                # static_url_path='/report/uploads',
-                # static_folder=settings.upload_root)
 
 
 # All endpoints in this blueprint require user to be logged in

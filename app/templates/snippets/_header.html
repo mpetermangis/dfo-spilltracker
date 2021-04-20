@@ -18,7 +18,8 @@
 
     <!-- jQuery and jQuery UI -->
     <script src="/static/jquery-3.4.1.min.js"></script>
-    
+
+    <!-- Extra imports disabled for now, enable if needed -->
     {# <link rel="stylesheet" href="/static/assets/js/jquery-ui.css">
     <script src="/static/assets/js/jquery-ui.min.js"></script> #}
 
@@ -28,6 +29,7 @@
 
     <!-- Custom CSS, js common lib -->
     <link rel="stylesheet" type="text/css" href="/static/spill.css">
-    <title>{{ title }}</title>
+    <title>{% block title %}{% endblock %} - CCG/DFO Spill Tracker</title>
+    {# <title>{{ title }}</title> #}
 
 </head>

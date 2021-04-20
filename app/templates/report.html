@@ -10,7 +10,8 @@
     integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
     crossorigin=""></script>
 
-{% set title = '({{ report.report_num}} ) Report - CCG/DFO Spill Tracker' %}
+
+{% block title %}{{ report.report_name}} ({{ report.report_num}}){% endblock %}
 
 <main id="report{{ report.report_num}}" role="main">
 
