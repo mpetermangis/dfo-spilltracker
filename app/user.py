@@ -14,7 +14,6 @@ class User(db.Model, UserMixin):
     password = db.Column(db.String(255))
     active = db.Column(db.Boolean, default=False)
     confirmed_at = db.Column(db.DateTime())
-    # roles = db.relationship('Role', secondary=roles_users, backref=db.backref('users', lazy='dynamic'))
     roles = db.relationship('Role', secondary='user_roles',
                             backref=db.backref('users', lazy='dynamic'))
 
@@ -69,8 +68,6 @@ def set_user_access(user_id, role_name):
 
     # Get user by id
     u = User.query.filter(User.id == user_id).first()
-    # Check role name
-    logger.info('here')
 
     if role_name == 'nologin':
         # Set user to inactive
@@ -89,8 +86,3 @@ def set_user_access(user_id, role_name):
             logger.info('Updated user role: %s' % role_name)
             db.session.add(u)
             db.session.commit()
-
-
-
-
-

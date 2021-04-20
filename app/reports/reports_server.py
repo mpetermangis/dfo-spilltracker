@@ -1,6 +1,8 @@
 import os
+from datetime import datetime
 from flask import Blueprint, flash, jsonify, request, redirect, render_template, url_for, send_file, send_from_directory
 from flask_login import current_user
+from flask_security import roles_required
 from werkzeug.utils import secure_filename
 
 import settings
@@ -23,21 +25,6 @@ rep = Blueprint('report', __name__, url_prefix='/report')
 def check_login():
     if not current_user:
         return redirect(url_for('security.login'))
-
-
-# Always add current user to templates for this blueprint
-# https://stackoverflow.com/a/26498865
-# @rep.context_processor
-# def inject_user():
-#     # user_dict = dict(user=current_user)
-#     # user_dict['is_admin'] = current_user.has_role('admin')
-#     # return user_dict
-#     return dict(user=current_user)
-#
-#
-# @rep.context_processor
-# def inject_admin_flag():
-#     return dict(is_admin=current_user.has_role('admin'))
 
 
 @rep.route('/')
@@ -147,10 +134,14 @@ def show_report(report_num, timestamp=None):
 
 
 @rep.route('/new', methods=['GET'])
+# If a list of role names is specified here, the user mast have
+# any one of the specified roles to gain access.
+# https://flask-user.readthedocs.io/en/latest/authorization.html
+@roles_required(['admin', 'user'])
 def new_report():
+
     # Display the report form template, keep it blank (no data)
     # Set default report date to current date
-    from datetime import datetime
     report_date = datetime.now().strftime(settings.html_timestamp)
     report = {'report_date_html': report_date}
     return render_template('report_form.html',
@@ -162,6 +153,7 @@ def new_report():
 
 
 @rep.route('/<report_num>/update', methods=['GET'])
+@roles_required(['admin', 'user'])
 def update_report(report_num):
     """
     Display the report form using the latest incremental data for this spill id
@@ -177,6 +169,7 @@ def update_report(report_num):
 
 
 @rep.route('/save_report_data', methods=['POST'])
+@roles_required(['admin', 'user'])
 def save_report_data():
     """
     The forms in both /report/new and /report/<report_num>/update feed to this endpoint

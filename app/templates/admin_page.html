@@ -14,9 +14,27 @@
 
     <h3>User Roles</h3>
     <p>Use the following section to manage user roles. Each user must have a role defined.
-        The No Login role is for previous users who are no longer active. They are not deleted from the system,
-        since they may be linked to spill reports, but they can no login to the system.
+        Roles are described below.
     </p>
+    <ul>
+        <li>
+            <span class="font-weight-bold">Admin:</span> Full access to the entire system,
+            including this admin page.
+        </li>
+        <li>
+            <span class="font-weight-bold">User:</span> No access to the admin page, can add
+            and update any spill report.
+        </li>
+        <li>
+            <span class="font-weight-bold">Observer:</span> Read-only access to spill reports
+            and the map view.
+        </li>
+        <li>
+            <span class="font-weight-bold">No Login:</span> This role is for previous users who are
+            now inactive. Inactive users are not deleted from the system, since their user IDs
+            may be linked to spill reports in the database. These users can no longer login to the system.
+        </li>
+    </ul>
 
     <form id="adminForm" action="{{ url_for('admin.save_admin_data') }}" method="post" enctype="multipart/form-data">
 
@@ -52,32 +70,31 @@
 
         <h3>Manage Mailing Lists</h3>
 
+        <p>
+            Use the fields below to manage email notification lists for updates to spill reports.
+            Each field must contain a comma-separated list of email addresses. Please be careful when pasting
+            email addresses.  An invalid address will prevent email notifications from working.  For example,
+            do not include the user's name: Last, First &#60;First.Last@dfo-mpo.gc.ca&#62;
+        </p>
+        <p>
+            Instead, enter only: First.Last@dfo-mpo.gc.ca
+        </p>
+        <p>
+            <span class="font-weight-bold">Note:</span> At this time there is only a single (default)
+            distribution list. In the future, additional lists may be added.
+        </p>
+
         {% for list in mailing_lists %}
         <div class="form-group">
-            <label for="{{ list.name }}">{{ list.label }}</label>
+            <label for="{{ list.name }}"><span class="font-weight-bold">List:</span> {{ list.label }}</label>
             <textarea rows="2" class="form-control" id="{{ list.name }}" name="{{ list.name }}"
                 aria-describedby="{{ list.name }}-help">{{ list.emails }}</textarea>
                 <small id="{{ list.name }}-help" class="form-text text-muted">{{ list.description }}</small>
         </div>
         {% endfor %}
 
-        <button type="submit" class="btn btn-primary">Save Settings</button>
-
-    {# <table class="p-1">
-    <thead>
-
-    </thead>
-    <tbody>
-    {% for user in users %}
-        <tr>
-            <td>{{ user.staff_name }}</td>
-            <td>{{ user.email }}</td>
-        </tr>
-    {% endfor %}  #}
-
-    </tbody>
-    </table>
-
+        <button type="submit" class="btn btn-primary mb-5">Save Settings</button>
+    </form>
 
 </main>
 

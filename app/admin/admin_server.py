@@ -19,12 +19,6 @@ logger = settings.setup_logger(__name__)
 # Flask blueprint for admin page
 adm = Blueprint('admin', __name__, url_prefix='/admin')
 
-# Always add current user to templates for this blueprint
-# https://stackoverflow.com/a/26498865
-# @adm.context_processor
-# def inject_user():
-#     return dict(user=current_user)
-
 
 # @route() must always be the outer-most decorator
 # https://flask-user.readthedocs.io/en/latest/authorization.html
@@ -64,8 +58,8 @@ def save_admin_data():
 
             # Get email lists
             elif key.startswith('MAIL_LIST'):
-                # list_type = key.replace('emaillist-', '')
                 # Save the new mailing list
+                logger.info('Save mailing list: %s' % key)
                 save_mailing_list(key, value)
 
         logger.info('Saved Admin data OK, redirect to admin page')
@@ -87,7 +81,6 @@ def save_mailing_list(list_name, emails):
     mail_lists = load_mailing_list()
 
     # List of mailing lists
-    # mail_lists = data.get('lists')
     mail_lists_updated = []
 
     for ml in mail_lists:
