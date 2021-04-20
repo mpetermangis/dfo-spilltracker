@@ -68,13 +68,21 @@ def set_user_access(user_id, role_name):
 
     # Get user by id
     u = User.query.filter(User.id == user_id).first()
+    save = False
 
     if role_name == 'nologin':
         # Set user to inactive
         u.active = False
-        db.session.add(u)
-        db.session.commit()
+        save = True
+        # db.session.add(u)
+        # db.session.commit()
     else:
+        # Ensure that user is active (this allows reactivating users who
+        # were previously deactivated)
+        if not u.active:
+            logger.info('Activating user: %s' % u.staff_name)
+            u.active = True
+            save = True
         # Check if role needs to be updated. Get list of existing roles
         current_roles = [role.name for role in u.roles]
         if role_name not in current_roles:
@@ -83,6 +91,11 @@ def set_user_access(user_id, role_name):
             # Clear existing roles
             u.roles.clear()
             u.roles.append(role)
-            logger.info('Updated user role: %s' % role_name)
-            db.session.add(u)
-            db.session.commit()
+            logger.info('Updated user %s with role: %s' % (
+                u.staff_name, role_name))
+            save = True
+
+    # Save user data if needed
+    if save:
+        db.session.add(u)
+        db.session.commit()
