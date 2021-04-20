@@ -473,7 +473,7 @@ def get_timestamps(report_num):
             'ts_ccg_format': ts_ccg_format
         })
 
-    logger.info('Report timestamps: %s' % timestamps)
+    logger.info('Report has %s timestamps.' % len(timestamps))
     return timestamps
 
 
