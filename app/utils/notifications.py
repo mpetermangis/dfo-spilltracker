@@ -24,15 +24,9 @@ except:
 logger = settings.setup_logger(__name__)
 
 # Replace sender@example.com with your "From" address.
-# This address must be verified.
+# This address must be verified until we are out of the Amazon SES sandbox.
 SENDER = 'updates@marinepollution.ca'
 SENDERNAME = 'Notification Service - marinepollution.ca'
-
-# Replace recipient@example.com with a "To" address. If your account
-# is still in the sandbox, this address must be verified.
-# RECIPIENTS = ['mpetermangis@gmail.com', 'Nicholas.Benoy@dfo-mpo.gc.ca']
-# RECIPIENTS = ['mpetermangis@gmail.com']
-# RECIPIENTS = settings.DEFAULT_UPDATE_LIST
 
 # Replace smtp_username with your Amazon SES SMTP user name.
 USERNAME_SMTP = settings.smtp_user
@@ -68,7 +62,7 @@ def load_mailing_list():
 def save_mailing_list(list_name, emails):
     mail_lists = load_mailing_list()
 
-    # List of mailing lists
+    # Populate list of mailing lists
     mail_lists_updated = []
 
     for ml in mail_lists:
@@ -77,7 +71,7 @@ def save_mailing_list(list_name, emails):
             ml['emails'] = emails
         mail_lists_updated.append(ml)
 
-    # # Set mailing list emails
+    # Set mailing list emails
     data = {'lists': mail_lists_updated}
 
     with open(settings.MAILING_LIST_FILE, 'w') as f:
@@ -106,7 +100,7 @@ def notify_report(msg_content, msg_subject, recipients):
     Sends an HTML formatted email notification
     :param msg_content: email content
     :param msg_subject: subject line
-    :param recipients: comma-separated list of recipients
+    :param recipients: comma-separated list of recipients (string)
     :return:
     """
 
@@ -114,6 +108,7 @@ def notify_report(msg_content, msg_subject, recipients):
     msg = MIMEMultipart('alternative')
     msg['Subject'] = msg_subject
     msg['From'] = email.utils.formataddr((SENDERNAME, SENDER))
+    # This should be a comma-separates string of emails
     msg['To'] = recipients
 
     # Record the MIME types of both parts - text/plain and text/html.
@@ -128,11 +123,17 @@ def notify_report(msg_content, msg_subject, recipients):
     if not settings.NOTIFY_EMAILS:
         logger.warning('Email notifications disabled for testing!')
     else:
-        send_message(msg)
+        send_message(msg, recipients)
 
 
-def send_message(msg):
-    # Try to send the message.
+def send_message(msg, recipients_str):
+    """
+    Send a MIMEMultipart message
+    :param msg: message object
+    :param recipients_str: comma-separated list of recipients (string)
+    :return:
+    """
+
     try:
         logger.info('Connecting to SMTP server...')
         server = smtplib.SMTP(settings.smtp_server, settings.smtp_port)
@@ -141,16 +142,18 @@ def send_message(msg):
 
         # stmplib docs recommend calling ehlo() before & after starttls()
         server.ehlo()
-        to_list = msg.get('To')
-        logger.info('Connected. Sending email to: %s' % to_list)
+        logger.info('Connected. Sending email to: %s' % recipients_str)
         server.login(USERNAME_SMTP, PASSWORD_SMTP)
-        server.sendmail(SENDER, to_list, msg.as_string())
+
+        # server.sendmail needs a LIST of emails, not a string
+        recipients_list = [r.strip() for r in recipients_str.split(',')]
+        server.sendmail(SENDER, recipients_list, msg.as_string())
         server.close()
-    # Display an error message if something goes wrong.
+        logger.info("Email sent!")
+
+    # Log the error if something goes wrong.
     except Exception as e:
         logger.error("Error: ", e)
-    else:
-        logger.info("Email sent!")
 
 
 def test_notify_report(report_num, report_name):
@@ -178,9 +181,8 @@ def test_notify_report(report_num, report_name):
     msg = MIMEMultipart('alternative')
     msg['Subject'] = SUBJECT
     msg['From'] = email.utils.formataddr((SENDERNAME, SENDER))
-    msg['To'] = ', '.join(settings.DEFAULT_UPDATE_LIST)
-    # Comment or delete the next line if you are not using a configuration set
-    # msg.add_header('X-SES-CONFIGURATION-SET',CONFIGURATION_SET)
+    recipients_str = ', '.join(settings.DEFAULT_UPDATE_LIST)
+    msg['To'] = recipients_str
 
     # Record the MIME types of both parts - text/plain and text/html.
     part1 = MIMEText(BODY_TEXT, 'plain')
@@ -192,7 +194,7 @@ def test_notify_report(report_num, report_name):
     msg.attach(part1)
     msg.attach(part2)
 
-    send_message(msg)
+    send_message(msg, recipients_str)
 
 
 def main():
