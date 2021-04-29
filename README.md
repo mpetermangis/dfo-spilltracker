@@ -63,7 +63,6 @@ http://marinepollution.ca:8080/geoserver
 Also I tried using ssh tunneling, this did not work either. So we have to leave port 8080 wide open in Amz firewall, not ideal.  There are constant attempts to hack into geoserver. 
 
 
-
 ## Installation
 
 First basic setup, install required packages. 
