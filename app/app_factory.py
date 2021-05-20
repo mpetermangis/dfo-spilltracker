@@ -45,9 +45,9 @@ def create_app(register_blueprints=True):
     # Disable caching on downloaded files
     app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
-    app.config['UPLOAD_FOLDER'] = settings.attachments
-    # Disable caching on downloaded files
-    app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+    # app.config['UPLOAD_FOLDER'] = settings.attachments
+    # # Disable caching on downloaded files
+    # app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
     # Related to user logins (Flask-security)
     app.config['DEBUG'] = True
@@ -67,7 +67,7 @@ def create_app(register_blueprints=True):
     app.config['SECURITY_SEND_REGISTER_EMAIL'] = True
 
     # Disable caching on downloaded files
-    app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+    # app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
     # SQLALCHEMY_TRACK_MODIFICATIONS must be *enabled* for flask-whooshalchemy3
     # fulltext search. If disabled, it will NOT propagate updates to the search index.

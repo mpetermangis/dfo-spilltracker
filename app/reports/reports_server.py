@@ -81,10 +81,10 @@ def reports_map():
 @rep.route('/map_search', methods=['POST'])
 def reports_map_search():
     data = request.json
-    mapview_reports = postgis_db.get_reports_bbox(
-        data.get('lon_min'), data.get('lat_min'),
-        data.get('lon_max'), data.get('lat_max')
-    )
+    mapview_reports = postgis_db.get_reports_bbox(data)
+    #     data.get('lon_min'), data.get('lat_min'),
+    #     data.get('lon_max'), data.get('lat_max')
+    # )
     mapview_reports = add_leaflet_popups(mapview_reports)
     return jsonify(success=True, data=mapview_reports), 200
 

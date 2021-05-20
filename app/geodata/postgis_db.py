@@ -33,14 +33,22 @@ def update_report_map(report_num):
     engine.execute(sql_insert)
 
 
-# Get spill reports using a bounding box
-def get_reports_bbox(lon_min, lat_min, lon_max, lat_max):
+# Get spill reports using a bounding box and other params
+# def get_reports_bbox(lon_min, lat_min, lon_max, lat_max):
+def get_reports_bbox(data):
+    (lon_min, lat_min, lon_max, lat_max) = (
+        data.get('lon_min'), data.get('lat_min'),
+        data.get('lon_max'), data.get('lat_max'))
     if type(lon_min) is not float or type(lat_min) is not float or type(lon_max) is not float or type(lat_max) is not float:
         logger.error('Bad lat-lon bbox!')
         return []
 
+    date_from = data.get('date_from')
+    date_to = data.get('date_to')
+
     # Bbox query in postgis: https://gis.stackexchange.com/a/83448
-    bbox_query = '''
+    # bbox_qry = '''
+    full_query = '''
     SELECT *
     FROM   report_map_tbl
     WHERE  geometry 
@@ -50,10 +58,15 @@ def get_reports_bbox(lon_min, lat_min, lon_max, lat_max):
             %s, %s, -- bounding 
             %s, %s, -- box limits
             %s)
-    order by last_updated desc ;
     ''' % (lon_min, lat_min, lon_max, lat_max, REPORT_SRID)
 
-    reports = engine.execute(bbox_query)
+    if date_from and date_to:
+        full_query += ' AND spill_date BETWEEN %s AND %s' % (
+            date_from, date_to)
+
+    full_query += ' order by last_updated desc ;'
+
+    reports = engine.execute(full_query)
     # Return only the info needed to render the map view
     mapview_reports = []
     for r in reports:

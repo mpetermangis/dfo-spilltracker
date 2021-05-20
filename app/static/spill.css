@@ -83,6 +83,16 @@
     background: #fffef5;
 }
 
+#mapDateRange {
+    position: absolute;
+    left: 20px;
+    top: 20px;
+    /* width: 600px; */
+    z-index: 1000;
+    border: 1px solid grey;
+    background: #fffef5;
+}
+
 .jumbotron {
     /* background-color: transparent; */
     /* margin-top: 0rem; */

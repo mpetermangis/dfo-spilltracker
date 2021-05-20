@@ -82,6 +82,8 @@ function getReportsBbox(){
     console.log(`Bbox: ${bboxStr}`)
     // console.log(bbox)
 
+    // Get values from date field, if exists
+
     var mapSearchResults = $.post({
         url: frontendHost + '/report/map_search', 
         // data: JSON.stringify(bbox),
@@ -126,9 +128,6 @@ function getReportsBbox(){
     })
 }
 
-$('#loadNextSamples').on('click', function(){
-    loadNextSpillSamples()
-})
 
 // map.on('zoomend', function() {
 map.on('moveend', function() {
@@ -136,6 +135,15 @@ map.on('moveend', function() {
     $('#report_map_samples').empty()
     $('#loadNextLink').html('Load More...')
     getReportsBbox()
+})
+
+/* Other actions, not specifically for the map itself */
+$('#loadNextSamples').on('click', function(){
+    loadNextSpillSamples()
+})
+
+$('#expandFilters').on('click', function(){
+    $('#filterSelection').removeClass('d-none')
 })
 
 $(document).ready(function(){
