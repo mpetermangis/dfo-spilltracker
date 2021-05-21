@@ -1,10 +1,7 @@
 
 {% extends "_base.html" %}
-{# {% block content %} #}
 
 {% block fullpage %}
-
-{# {% block title %}Map View{% endblock %} #}
 
 <!-- Leaflet for report map view -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
@@ -16,53 +13,45 @@
 
 <main id="spillReports" role="main">
 
+<div id="mapDateRange" class="p-3 rounded">
+  
+    <button class="btn btn-link p-0" type="button" data-toggle="collapse" 
+      id="expandFilters" 
+      data-target="#filterSelection" aria-expanded="false" 
+      aria-controls="filterSelection">
+      <i class="fa fa-angle-right filter-collapse"></i> Filters
+    </button>
+  
+  <div id="filterSelection" class="collapse">
+    <form id="mapFilters">
+      <div class="form-row ml-2 mr-2">
+        <div class="form-group">
+            <label for="date_from">Earliest Date</label>
+            <input type="date" class="form-control map-filter" id="date_from" name="date_from" value="">
+        </div>
+        <div class="form-group ml-3">
+            <label for="date_to">Latest Date</label>
+            <input type="date" class="form-control map-filter" id="date_to" name="date_to" value="">
+        </div>
+      </div>
+      <button type="button" class="btn btn-success btn-sm" id="applyFilters">Apply</button>
+    </form>
+  </div>
+
+</div>
+
 {# <div class="container"> #}
   <div class="row" id="report_map_row">
       {# <div class="col-9"> #}
       <div class="col-12 col-md m-0 p-0">
           <div id="report_map_leaflet" class="m-0">
-            <div id="mapDateRange" class="p-2 m-0 rounded">
-              <h6>
-                Filter
-                <button type="button" class="btn btn-primary btn-sm ml-3" id="expandFilters">+</button>
-                {# <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus" viewBox="0 0 16 16">
-                  <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
-                </svg> #}
-              </h6>
-              <div id="filterSelection" class="d-none">
-                <div>Date Range</div>
-                <div class="form-row">
-                  <div class="form-group">
-                      <label for="date_from">From</label>
-                      <input type="date" class="form-control map-filter" id="date_from" name="date_from" value="">
-                  </div>
-                  <div class="form-group ml-3">
-                      <label for="date_to">To</label>
-                      <input type="date" class="form-control map-filter" id="date_to" name="date_to" value="">
-                  </div>
-                </div>
-                <button type="button" class="btn btn-success btn-sm ml-3" id="applyFilters">Apply</button>
-              </div>
-            </div>
-            {# <nav id="mapDateRange" class="navbar navbar-expand-lg navbar-light bg-light">
-              <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                <ul class="navbar-nav mr-auto">
-                  <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                      Dropdown
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </nav> #}
           </div>
       </div>
-      {# <div class="ol-12 col-md-auto addScroll" id="report_map_samples" style="background: red; width: 300px;"> #}
+      
       <div class="col-12 col-md-auto" id="report_map_column">
         <h5 class="text-center mt-2">Latest pollution reports <br>in this area</h5>
         <div id="report_map_samples"></div>
         <div id="loadNextSamples" class="text-center font-weight-bold mb-3"><a href="#" id="loadNextLink">Load More...</a></div>
-        {# <a id="loadNextSamples" class="text-center font-weight-bold mb-3" href="#">Load More...</a> #}
       </div>
   </div>
 {# </div> #}
@@ -74,6 +63,6 @@
 
 {% endblock fullpage %}
 
-{# Override footer #}
+{# Override footer--this was also overriding bootstrap JS and popper imports! #}
 {% block footer %}
 {% endblock footer %}

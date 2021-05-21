@@ -84,13 +84,17 @@
 }
 
 #mapDateRange {
-    position: absolute;
+    position: fixed;
     left: 20px;
-    top: 20px;
+    top: 80px;
     /* width: 600px; */
     z-index: 1000;
     border: 1px solid grey;
     background: #fffef5;
+}
+
+.filter-collapse {
+    font-size: 1.3rem;
 }
 
 .jumbotron {
