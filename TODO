@@ -1,5 +1,6 @@
 
 Todo:
+    - Captcha for registration: https://pusher.com/tutorials/google-recaptcha-flask/
     - export individual report to Excel using the template provided
     - allow editing (remove) attachments
 
