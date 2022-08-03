@@ -14,12 +14,12 @@ workflows:
   build-deploy:
     jobs:
       - build
-      - deploy:
-          requires:
-            - build
-          filters:
-            branches:
-              only: master
+#      - deploy:
+#          requires:
+#            - build
+#          filters:
+#            branches:
+#              only: master
 
 
 
@@ -38,6 +38,14 @@ jobs:
           POSTGRES_USER: ubuntu
           POSTGRES_DB: circle_test
           POSTGRES_PASSWORD: ''
+    steps:
+      - checkout
+      - run:
+          command: |
+            python3 -m venv venv
+            . venv/bin/activate
+            pip install -r requirements.txt
+
 
   deploy:
     executor: heroku/default
