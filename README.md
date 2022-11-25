@@ -45,14 +45,9 @@ Confirm we are using the correct virtualenv instance of python:
 
 Should all point to the Python v3.x in the virtualenv we created, NOT to the default system python. 
 
-Clone this git repo, using either the HTTP URL (if using a machine whose SSH key is not registered in github) or SSH:
-https://github.com/mpetermangis/dfo-spilltracker
+Clone this git repo. 
 
-`cd ~`
-
-`git clone git@github.com:mpetermangis/dfo-spilltracker.git`
-OR 
-`git clone https://github.com/mpetermangis/dfo-spilltracker.git`
+`cd dfo-spilltracker`
 
 Install python packages:
 
@@ -80,38 +75,7 @@ Save the connection string for this DB as an environment variable. This will be 
 
 `touch .env`
 
-Edit the .env file and add the following env vars:
-
-`SPILL_TRACKER_DB_URL=postgresql://spilluser:<password>@localhost/spilldb`
-
-Open a python console and create salt and secret for the DB logins. In python create a different random string for each of the env vars below:
-
-secrets.token_urlsafe(16)
-
-Add these to .env:
-
-`SPILLDB_SECRET=*******`
-`SPILLDB_SALT=*******`
-
-Or, use the following file to make the environment vars global.  But a `.env` file is the better option. 
-`sudo nano /etc/environment`
-
-Logout of the server and connect again via ssh. After re-connecting, you should have this enviro var:
-
-`echo SPILL_TRACKER_DB_URL`
-
-## Testing with SSL on localhost
-
-Some functions of the server, especially related to login/registration page, require SSL. This is a pain when testing on localhost. In Chrome, go to:
-chrome://flags/#allow-insecure-localhost
-Then set "Allow invalid certificates for resources loaded from localhost" to Enabled. 
-In Flask, run the app with `ssl_context='adhoc'`
-Yes, this works, no more warnings! 
-
-### Creating a self-signed SSL certificate
-
-This should not be needed if running flask with SSL adhoc, but just in case:
-https://blog.miguelgrinberg.com/post/running-your-flask-application-over-https
+Edit the .env file and add `SPILL_TRACKER_DB_URL` as an env var.
 
 
 ## Web Server Setup
@@ -130,7 +94,7 @@ If successful, should see a bunch of HTML code for the CCG/DFO Spill Tracker sys
 
 `/home/spill/venv/polrep/bin/uwsgi --socket 127.0.0.1:3031 --wsgi-file /home/spill/spilltracker/wsgi.py -H /home/spill/venv/polrep --chdir /home/spill/spilltracker --lazy-apps --processes 4 --threads 2 --stats 127.0.0.1:9191`
 
-That's quite a a mouthful. Let's break it down:
+This command consists of:
 
 `/home/spill/venv/polrep/bin/uwsgi` 
 
@@ -219,10 +183,7 @@ We are using Amazon's Simple Email Service (SES) to send emails using Simple Mai
 
 We also need to create and download SMTP credentials.  The credentials are only shown once; be sure to save the credentials file in a safe place. 
 
-Once this is done, we can send emails using any address that ends with `@marinepollution.ca`, for example:
-`updates@marinepollution.ca`
-`notifications@marinepollution.ca`
-`no-reply@marinepollution.ca`
+Once this is done, we can send emails using any address that ends with `@marinepollution.ca`.
 
 To test sending emails, use this example code:
 https://docs.aws.amazon.com/ses/latest/DeveloperGuide/examples-send-using-smtp.html
@@ -231,16 +192,6 @@ The list of SMTP endpoints is here:
 https://docs.aws.amazon.com/general/latest/gr/ses.html
 Be sure to use the list of SMTP Endpoints, ***NOT*** the list of SES endpoints which is just above it on that page. 
 
-Any newly verified domain is put in the Amazon SES Sandbox by default, with the following restrictions:
-https://docs.aws.amazon.com/ses/latest/DeveloperGuide/request-production-access.html
-This page also describes how to get out of the sandbox.  It is a good idea to send a number of test emails while still in the sandbox, and ensure that the receiving domain does not mark them as Spam or suspicious.  After ensuring that emails are consistently being delivered, then follow the instructions to get out of the sandbox. 
-
-## Troubleshooting
-
-**None** of the Flask-security endpoints are working, such as /login, /reset. 
-Why? Because my browser had a previously-stored session which was being used, so I was already logged in. Need to logout first, hit this endpoint:
-http://0.0.0.0:5000/logout
-Now it's working as expected. 
 
 ### PostGIS Table for Spill Reports
 
@@ -258,41 +209,3 @@ In the Postgres tables, I created another table to hold a spatial view of the da
 ## Geoserver
 
 Geoserver is used to provide WMS access to the spill report data. Geoserver serves one table from postgis, `report_map_tbl`. Note that PostGIS runs independently from Geoserver, and does not require Geoserver.  However, Geoserver requires PostGIS to be running with the table mentioned above. Without this, Geoserver has nothing to serve to WMS clients.  
-
-Restricting access to /geoserver via an auth endpoint works in Nginx, but in Geoserver it causes CORS errors.  Even though CORS is enabled in the Geoserver Jetty config, does not work if we access the web interface via:
-
-https://marinepollution.ca/geoserver
-
-Have to go through:
-http://marinepollution.ca:8080/geoserver
-
-Also I tried using ssh tunneling, this did not work either. So we have to leave port 8080 wide open in Amz firewall, not ideal.  There are constant attempts to hack into geoserver. 
-
-### Proxy Base URL
-
-Unclear how this is supposed to be set. We have tried the following:
-
-http://marinepollution.ca:8080/geoserver
-
-https://marinepollution.ca/geoserver < with nginx proxy
-
-http://localhost:8080/geoserver
-
-With or without geoserver? 
-Maybe without? see: https://gis.stackexchange.com/a/304623
-
-http://localhost:8080
-
-No, that doesn't work, because then it tries to access URLs (from the end-user's browser) like this:
-http://localhost:8080/polrep/wms?service=WMS&...
-Clearly not going to work, since this request is coming from a remote machine, not localhost. 
-
-And it has to have /geoserver at the end, or we get a URL like:
-http://marinepollution.ca:8080/polrep/wms?...
-
-When it's supposed to be:
-http://marinepollution.ca:8080/geoserver/polrep/wms?...
-
-Get Capabilities URL:
-http://marinepollution.ca:8080/geoserver/ows?service=wms&version=1.3.0&request=GetCapabilities
-
